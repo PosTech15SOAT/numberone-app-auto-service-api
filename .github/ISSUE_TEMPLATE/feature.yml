@@ -1,0 +1,30 @@
+name: Funcionalidade
+description: Planejar uma nova funcionalidade ou melhoria tecnica.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo
+      description: Qual resultado deve ser entregue?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo
+      description: Liste as mudancas esperadas e o que nao faz parte desta tarefa.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceite
+      description: Informe comportamentos verificaveis.
+      placeholder: |
+        - [ ] Criterio 1
+        - [ ] Criterio 2
+    validations:
+      required: true

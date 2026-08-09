@@ -1,0 +1,173 @@
+CHECKLIST – TECH CHALLENGE FASE 1
+
+🧩 1. FUNCIONALIDADES (MVP)
+
+🔹 Ordem de Serviço (CORE)
+[ ] Criar OS (cliente + veículo)
+[ ] Adicionar serviços na OS
+[ ] Adicionar peças/insumos
+[ ] Gerar orçamento automático
+[ ] Enviar orçamento para aprovação
+[ ] Aprovar/Reprovar orçamento
+[ ] Atualizar status da OS:
+    [ ] RECEBIDA
+    [ ] EM_DIAGNOSTICO
+    [ ] AGUARDANDO_APROVACAO
+    [ ] EM_EXECUCAO
+    [ ] FINALIZADA
+    [ ] ENTREGUE
+[ ] Consulta de acompanhamento da OS (API cliente)
+
+🔹 Cadastro Base
+[ ] CRUD Cliente
+[ ] CRUD Veículo
+[ ] Validação CPF/CNPJ
+[ ] Validação placa
+
+🔹 Catálogo + Estoque
+[X] CRUD Serviço
+[X] CRUD Item
+[X] Controle de estoque:
+    [X] Entrada
+    [X] Baixa
+    [X] Ajuste
+[X] Histórico de movimentação
+[ ] Integração com OS (baixa de estoque ao consumir item)
+
+🔹 Gestão
+[ ] Listagem de OS
+[ ] Detalhamento de OS
+[ ] Tempo médio de execução (mínimo básico)
+
+--------------------------------------------------
+
+🔐 2. SEGURANÇA E QUALIDADE
+
+[ ] JWT funcionando (rotas administrativas)
+[ ] Validação de dados sensíveis (CPF/CNPJ, placa)
+[ ] Tratamento global de erros
+[ ] Testes:
+    [ ] Unitários
+    [ ] Integração
+    [ ] Cobertura ≥ 80% (domínios críticos)
+
+--------------------------------------------------
+
+⚙️ 3. REQUISITOS TÉCNICOS
+
+[ ] Monolito organizado (camadas ou clean arch)
+[ ] API REST funcionando
+[ ] Swagger funcionando
+[ ] Endpoints documentados no Swagger
+[ ] Banco definido e justificado
+[ ] Flyway configurado
+[ ] Dockerfile
+[ ] docker-compose
+[ ] Projeto roda local com 1 comando
+[ ] README explica como rodar passo a passo
+
+--------------------------------------------------
+
+📦 4. ENTREGÁVEIS OBRIGATÓRIOS
+
+🎥 Vídeo
+[ ] Até 15 minutos
+[ ] Mostrar:
+    [ ] Fluxo completo da OS
+    [ ] Cadastro (cliente/veículo)
+    [ ] Estoque
+    [ ] Execução
+
+📊 Documentação DDD
+[ ] Event Storming:
+    [ ] Criação da OS
+    [ ] Acompanhamento da OS
+    [ ] Estoque
+[ ] Diagramas (agregados, entidades, etc.)
+[ ] Linguagem ubíqua aplicada
+[ ] Entidades principais definidas
+[ ] Regras de negócio mapeadas
+
+💻 Código
+[ ] Repositório privado
+[ ] APIs funcionando
+[ ] Docker configurado
+[ ] README completo
+
+🔍 Segurança
+[ ] Scan de vulnerabilidade
+[ ] Relatório com análise
+
+📄 Documento final (PDF)
+[ ] Nome do grupo
+[ ] Integrantes + Discord
+[ ] Link do repositório
+[ ] Link documentação
+[ ] Relatório de vulnerabilidades
+
+--------------------------------------------------
+
+👨‍💻 5. DIVISÃO DO TIME
+
+🟢 Anderson (Cliente / Veículo)
+[ ] CRUD cliente
+[ ] CRUD veículo
+[ ] Validações
+[ ] APIs + testes
+
+🔵 Julio (Serviço / Estoque)
+[X] CRUD serviço
+[X] CRUD item
+[X] Controle estoque
+[X] Movimentações
+[ ] APIs + testes
+[ ] Integração com OS
+
+🟣 Matheus (Ordem de Serviço)
+[ ] Fluxo completo da OS
+[ ] Orçamento
+[ ] Status
+[ ] Integração com outros módulos
+[ ] APIs + testes
+
+🔴 Marcelo (Infra / Integração)
+[ ] JWT
+[ ] Swagger
+[ ] Docker
+[ ] Flyway
+[ ] Integração geral
+[ ] Padrões do projeto
+[ ] README
+
+--------------------------------------------------
+
+🚨 6. CHECK FINAL (ANTES DE ENTREGAR)
+
+[ ] Tudo roda local (docker-compose)
+[ ] Banco sobe e cria tabelas
+[ ] Swagger abre corretamente
+[ ] JWT funciona
+[ ] Nenhuma API quebrada
+[ ] Testes principais passando
+[ ] README claro
+[ ] Integração entre módulos funcionando
+[ ] Fluxo completo funcionando:
+    cliente → OS → orçamento → execução → estoque
+[ ] API testada via Swagger ou Insomnia
+[ ] Sistema pronto para demonstração
+[ ] Vídeo gravado
+[ ] PDF final pronto
+
+--------------------------------------------------
+
+⚠️ DICA (IMPORTANTE)
+
+Se faltar tempo, priorizem:
+
+[ ] Fluxo da OS funcionando completo
+[ ] Integração entre módulos
+[ ] Estoque integrado com OS
+[ ] Docker rodando
+[ ] Vídeo bem explicado
+
+O resto pode ser simplificado (DDD e métricas mais leves)
