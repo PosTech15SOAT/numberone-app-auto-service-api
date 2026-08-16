@@ -19,15 +19,17 @@ import java.util.UUID;
 @ConditionalOnProperty(prefix = "app.security.identity", name = "provider", havingValue = "gateway")
 public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvider {
 
-	private final Optional<AuthenticatedUser> authenticatedUser;
+	private final HttpServletRequest request;
+	private final AuthenticatedUserProperties.Headers headers;
 
 	public GatewayAuthenticatedUserProvider(HttpServletRequest request, AuthenticatedUserProperties properties) {
-		this.authenticatedUser = resolve(request, properties.getHeaders());
+		this.request = request;
+		this.headers = properties.getHeaders();
 	}
 
 	@Override
 	public Optional<AuthenticatedUser> currentUser() {
-		return authenticatedUser;
+		return resolve(request, headers);
 	}
 
 	private Optional<AuthenticatedUser> resolve(
@@ -36,6 +38,9 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 	) {
 		String subject = request.getHeader(headers.getSubject());
 		if (subject == null || subject.isBlank()) {
+			if (hasAnyIdentityHeader(request, headers)) {
+				throw new InvalidAuthenticatedUserContextException("Identity context is incomplete");
+			}
 			return Optional.empty();
 		}
 
@@ -57,6 +62,13 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 		} catch (IllegalArgumentException exception) {
 			throw new InvalidAuthenticatedUserContextException("Invalid authenticated user context", exception);
 		}
+	}
+
+	private boolean hasAnyIdentityHeader(HttpServletRequest request, AuthenticatedUserProperties.Headers headers) {
+		return request.getHeader(headers.getCustomerId()) != null
+			|| request.getHeader(headers.getStatus()) != null
+			|| request.getHeader(headers.getRoles()) != null
+			|| request.getHeader(headers.getPermissions()) != null;
 	}
 
 	private String requiredHeader(HttpServletRequest request, String headerName) {

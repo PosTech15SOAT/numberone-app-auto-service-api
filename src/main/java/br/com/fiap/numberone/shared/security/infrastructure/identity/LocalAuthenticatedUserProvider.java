@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Component
 @RequestScope
-@ConditionalOnProperty(prefix = "app.security.identity", name = "provider", havingValue = "local", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "app.security.identity", name = "provider", havingValue = "local")
 public class LocalAuthenticatedUserProvider implements AuthenticatedUserProvider {
 
 	private final AuthenticatedUser authenticatedUser;

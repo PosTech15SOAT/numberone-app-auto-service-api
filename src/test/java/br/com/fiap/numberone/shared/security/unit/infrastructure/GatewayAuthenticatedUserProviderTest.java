@@ -65,7 +65,18 @@ class GatewayAuthenticatedUserProviderTest {
 
 		assertThrows(
 			InvalidAuthenticatedUserContextException.class,
-			() -> new GatewayAuthenticatedUserProvider(request, properties)
+			() -> new GatewayAuthenticatedUserProvider(request, properties).currentUser()
+		);
+	}
+
+	@Test
+	void shouldRejectIdentityHeadersWithoutSubject() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addHeader("X-Authenticated-Roles", "ADMIN");
+
+		assertThrows(
+			InvalidAuthenticatedUserContextException.class,
+			() -> new GatewayAuthenticatedUserProvider(request, properties).currentUser()
 		);
 	}
 
@@ -75,7 +86,7 @@ class GatewayAuthenticatedUserProviderTest {
 
 		InvalidAuthenticatedUserContextException exception = assertThrows(
 			InvalidAuthenticatedUserContextException.class,
-			() -> new GatewayAuthenticatedUserProvider(request, properties)
+			() -> new GatewayAuthenticatedUserProvider(request, properties).currentUser()
 		);
 
 		assertTrue(exception.getMessage().contains("X-Authenticated-Customer-Id"));

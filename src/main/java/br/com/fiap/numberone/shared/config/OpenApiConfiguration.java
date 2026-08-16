@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
@@ -22,30 +20,21 @@ public class OpenApiConfiguration {
 				.title("NumberOne - API da Oficina")
 				.version("v1")
 				.description("""
-					API REST do Tech Challenge Fase 1 para gestao de oficina mecanica.
+					API REST do Tech Challenge Fase 3 para gestao de oficina mecanica.
 
-					O sistema cobre autenticacao administrativa com JWT, cadastro de clientes e veiculos,
+					Em producao, a autenticacao e validada pelo API Gateway/Authorizer. A API recebe somente
+					o contexto de identidade confiavel e aplica autorizacao por papel, permissao e propriedade.
+					O sistema cobre cadastro de clientes e veiculos,
 					catalogo de servicos automotivos, estoque de pecas e insumos, ordem de servico,
-					orcamento, aprovacao e acompanhamento publico da OS.
+					orcamento, aprovacao e acompanhamento autenticado da OS.
 
-					Fluxo principal sugerido para testes:
-					1. Fazer login em /api/public/auth/login.
-					2. Copiar o accessToken retornado.
-					3. Clicar em Authorize no Swagger e informar Bearer <token>.
-					4. Criar cliente, veiculo, servico e item de estoque.
-					5. Criar a ordem de servico, adicionar servicos/insumos, gerar orcamento e acompanhar o status.
+					No profile local, uma identidade ADMIN controlada por configuracao e usada apenas para desenvolvimento.
 					"""))
 			.servers(List.of(
 				new Server()
 					.url("http://localhost:8080")
 					.description("Ambiente local com Docker Compose ou Maven")
 			))
-			.components(new Components()
-				.addSecuritySchemes("bearerAuth", new SecurityScheme()
-					.type(SecurityScheme.Type.HTTP)
-					.scheme("bearer")
-					.bearerFormat("JWT")
-					.description("JWT emitido pelo endpoint /api/public/auth/login")))
-			.addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+			.components(new Components());
 	}
 }

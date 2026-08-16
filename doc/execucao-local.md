@@ -70,30 +70,16 @@ Configuracao padrao usada pela aplicacao:
 - Health Check: `http://localhost:8080/api/public/health`
 - Mailpit: `http://localhost:8025`
 
-## Credenciais locais
+## Identidade local
 
-Usuario administrativo criado automaticamente:
+O profile `local` usa uma identidade ADMIN apenas para desenvolvimento. Nao existe endpoint de login na API principal. Por padrao, Swagger e chamadas locais ja sao executados como `local-admin`.
 
-- usuario: `admin`
-- senha: `admin123456`
+O contexto pode ser alterado pelas variaveis:
 
-Endpoint de login:
+- `LOCAL_AUTHENTICATED_SUBJECT`
+- `LOCAL_AUTHENTICATED_CUSTOMER_ID`
+- `LOCAL_AUTHENTICATED_STATUS`
+- `LOCAL_AUTHENTICATED_ROLES`
+- `LOCAL_AUTHENTICATED_PERMISSIONS`
 
-```text
-POST /api/public/auth/login
-```
-
-Body:
-
-```json
-{
-  "username": "admin",
-  "password": "admin123456"
-}
-```
-
-Use o `accessToken` retornado no header:
-
-```text
-Authorization: Bearer <token>
-```
+Para simular um cliente, use role `CUSTOMER`, informe o UUID do cliente e as permissions necessarias. Em producao, mantenha `AUTHENTICATED_USER_PROVIDER=gateway`; o provider local nao deve ser habilitado.

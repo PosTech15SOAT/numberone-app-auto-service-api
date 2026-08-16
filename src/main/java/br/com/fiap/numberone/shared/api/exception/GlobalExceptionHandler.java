@@ -1,6 +1,5 @@
 package br.com.fiap.numberone.shared.api.exception;
 
-import br.com.fiap.numberone.shared.security.domain.exceptions.InvalidCredentialsException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,17 +84,6 @@ public class GlobalExceptionHandler {
                         List.of("O corpo da requisição está inválido ou mal formatado")
                 )
         );
-    }
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                ex.getMessage(),
-                List.of()
-        );
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

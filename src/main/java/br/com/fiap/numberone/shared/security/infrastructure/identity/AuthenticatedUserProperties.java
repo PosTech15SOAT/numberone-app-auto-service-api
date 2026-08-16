@@ -9,7 +9,7 @@ import java.util.UUID;
 @ConfigurationProperties(prefix = "app.security.identity")
 public class AuthenticatedUserProperties {
 
-	private String provider = "local";
+	private String provider = "gateway";
 	private final Headers headers = new Headers();
 	private final Local local = new Local();
 
