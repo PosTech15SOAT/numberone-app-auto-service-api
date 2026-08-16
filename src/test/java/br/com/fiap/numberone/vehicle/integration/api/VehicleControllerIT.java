@@ -1,8 +1,7 @@
 package br.com.fiap.numberone.vehicle.integration.api;
 
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
-import br.com.fiap.numberone.shared.security.infrastructure.repositories.AdminUserRepository;
-import br.com.fiap.numberone.shared.security.infrastructure.token.JwtService;
+import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
 import br.com.fiap.numberone.vehicle.api.controllers.VehicleController;
 import br.com.fiap.numberone.vehicle.api.exceptions.VehicleExceptionHandler;
 import br.com.fiap.numberone.vehicle.api.mappers.VehicleApiMapper;
@@ -52,10 +51,7 @@ class VehicleControllerIT {
     private VehicleService vehicleService;
 
     @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
-    private AdminUserRepository adminUserRepository;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @Test
     void shouldCreateVehicle() throws Exception {

@@ -23,7 +23,6 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.tags.Tag;
 
 @Configuration
@@ -31,7 +30,6 @@ public class OpenApiDocumentationCustomizer {
 
     private static final String APPLICATION_JSON = "application/json";
     private static final String TEXT_PLAIN = "text/plain";
-    private static final String BEARER_AUTH = "bearerAuth";
 
     private static final String CUSTOMER_ID = "1ed09259-0f4f-4fd8-867c-a13d4d2fda4e";
     private static final String VEHICLE_ID = "74a3eaac-979c-4f93-a926-2a3595047db9";
@@ -123,17 +121,10 @@ public class OpenApiDocumentationCustomizer {
     }
 
     private static void customizeOperation(String path, PathItem.HttpMethod method, Operation operation) {
-        if (path.startsWith("/api/public/")) {
-            operation.setSecurity(List.of());
-        } else if (path.startsWith("/api/admin/")) {
-            operation.setSecurity(List.of(new SecurityRequirement().addList(BEARER_AUTH)));
-        }
-
         describePathParameters(operation);
 
         switch (method.name() + " " + path) {
             case "GET /api/public/health" -> health(operation);
-            case "POST /api/public/auth/login" -> login(operation);
             case "GET /api/admin/session" -> currentSession(operation);
             case "POST /api/admin/clientes" -> createCustomer(operation);
             case "PUT /api/admin/clientes/{id}" -> updateCustomer(operation);
@@ -205,40 +196,17 @@ public class OpenApiDocumentationCustomizer {
                 """);
     }
 
-    private static void login(Operation operation) {
-        describe(operation, "Autenticacao e Sessao", "Autenticar administrador",
-                "Realiza login administrativo e retorna um token JWT para uso nas rotas protegidas.");
-        request(operation, "Credenciais locais criadas automaticamente em ambiente de desenvolvimento.",
-                "insomnia", "Exemplo usado no Insomnia", """
-                {
-                  "username": "admin",
-                  "password": "admin123456"
-                }
-                """);
-        response(operation, "200", "Login realizado com sucesso.", "token", "Token JWT retornado", """
-                {
-                  "accessToken": "token.jwt.exemplo",
-                  "tokenType": "Bearer",
-                  "expiresInSeconds": 3600
-                }
-                """);
-        error(operation, "400", "Dados obrigatorios ausentes ou invalidos.", badRequestExample());
-        error(operation, "401", "Credenciais invalidas.", """
-                {
-                  "status": 401,
-                  "message": "Usuario ou senha invalidos",
-                  "errors": []
-                }
-                """);
-    }
-
     private static void currentSession(Operation operation) {
         describe(operation, "Autenticacao e Sessao", "Consultar sessao autenticada",
-                "Retorna usuario, papel e status da sessao com base no token JWT enviado.");
+                "Retorna o contexto de identidade confiavel recebido do API Gateway/Authorizer.");
         response(operation, "200", "Sessao autenticada.", "sessao", "Sessao admin", """
                 {
-                  "username": "admin",
-                  "role": "ADMIN",
+                  "subject": "auth-user-id",
+                  "customerId": null,
+                  "status": "ACTIVE",
+                  "roles": ["ADMIN"],
+                  "permissions": ["SERVICE_ORDER_MANAGE"],
+                  "correlationId": "request-correlation-id",
                   "authenticated": true
                 }
                 """);

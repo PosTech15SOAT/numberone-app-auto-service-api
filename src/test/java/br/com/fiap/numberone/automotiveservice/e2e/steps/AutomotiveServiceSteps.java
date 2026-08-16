@@ -36,7 +36,6 @@ public class AutomotiveServiceSteps {
     private Map<String, Object> createResponseBody;
     private Map<String, Object> findByIdResponseBody;
     private String createdServiceId;
-    private String accessToken;
 
     @Before
     public void setUp() {
@@ -60,7 +59,6 @@ public class AutomotiveServiceSteps {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/admin/servicos"))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + getAccessToken())
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
                 .build();
 
@@ -90,7 +88,6 @@ public class AutomotiveServiceSteps {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/admin/servicos/" + createdServiceId))
                 .header("Accept", "application/json")
-                .header("Authorization", "Bearer " + getAccessToken())
                 .GET()
                 .build();
 
@@ -110,28 +107,5 @@ public class AutomotiveServiceSteps {
         assertThat(findByIdResponseBody.get("description")).isEqualTo("Revisao automotiva completa via Cucumber");
         assertThat(findByIdResponseBody.get("serviceType")).isEqualTo("REVISAO");
         assertThat(findByIdResponseBody.get("estimatedTimeMinutes")).isEqualTo(120);
-    }
-
-    @SuppressWarnings("unchecked")
-    private String getAccessToken() throws Exception {
-        if (accessToken != null) {
-            return accessToken;
-        }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + "/api/public/auth/login"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("""
-                        {
-                          "username": "admin",
-                          "password": "admin123456"
-                        }
-                        """))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).isEqualTo(200);
-        accessToken = (String) objectMapper.readValue(response.body(), Map.class).get("accessToken");
-        return accessToken;
     }
 }

@@ -37,10 +37,10 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/numberone
       DB_USERNAME: admin
       DB_PASSWORD: admin
-      JWT_SECRET: change-this-local-jwt-secret-with-32-chars
-      BOOTSTRAP_ADMIN_USERNAME: admin
-      BOOTSTRAP_ADMIN_PASSWORD: admin123456
-      BOOTSTRAP_ADMIN_ROLE: ADMIN
+      AUTHENTICATED_USER_PROVIDER: local
+      LOCAL_AUTHENTICATED_SUBJECT: local-admin
+      LOCAL_AUTHENTICATED_STATUS: ACTIVE
+      LOCAL_AUTHENTICATED_ROLES: ADMIN
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       APP_MAIL_FROM: no-reply@numberone.local

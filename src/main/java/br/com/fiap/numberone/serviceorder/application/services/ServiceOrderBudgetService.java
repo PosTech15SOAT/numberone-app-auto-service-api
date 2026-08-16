@@ -80,6 +80,12 @@ public class ServiceOrderBudgetService {
         return savedBudget;
     }
 
+    public UUID getCustomerId(UUID budgetId) {
+        ServiceOrderBudget serviceOrderBudget = getServiceOrderBudget(budgetId);
+        ServiceOrder serviceOrder = getServiceOrder(serviceOrderBudget);
+        return serviceOrder.getCustomer() == null ? null : serviceOrder.getCustomer().getId();
+    }
+
     private void updateServiceOrderStatus(ServiceOrderBudget serviceOrderBudget, ServiceOrderStatus approved) {
         ServiceOrder serviceOrder = getServiceOrder(serviceOrderBudget);
         serviceOrder.updateStatus(approved);

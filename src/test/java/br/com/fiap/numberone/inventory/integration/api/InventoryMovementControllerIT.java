@@ -7,8 +7,7 @@ import br.com.fiap.numberone.inventory.application.services.InventoryMovementSer
 import br.com.fiap.numberone.inventory.domain.entities.InventoryMovement;
 import br.com.fiap.numberone.inventory.domain.exceptions.InventoryBusinessException;
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
-import br.com.fiap.numberone.shared.security.infrastructure.repositories.AdminUserRepository;
-import br.com.fiap.numberone.shared.security.infrastructure.token.JwtService;
+import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,10 +53,7 @@ class InventoryMovementControllerIT {
     private InventoryMovementService inventoryMovementService;
 
     @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
-    private AdminUserRepository adminUserRepository;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @Test
     void shouldRegisterEntry() throws Exception {
