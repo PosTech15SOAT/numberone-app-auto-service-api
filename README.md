@@ -1,8 +1,8 @@
 # NumberOne Auto Service API
 
-Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina mecanica. Este repositorio foi migrado da solucao desenvolvida nas fases anteriores e sera evoluido para operar em Kubernetes, atras de um API Gateway e integrado a um Lambda Authorizer.
+Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina mecanica. Este repositorio foi migrado da solucao desenvolvida nas fases anteriores para operar em Kubernetes, atras de um API Gateway e integrado a um Lambda Authorizer.
 
-> Estado da migracao: o codigo legado ainda possui autenticacao JWT interna. A substituicao pelo contexto autenticado fornecido pelo API Gateway esta registrada no backlog da Fase 3.
+> A aplicacao nao emite nem valida JWT de clientes. O API Gateway e o Lambda Authorizer validam o token e encaminham um contexto de identidade confiavel.
 
 ## Stack
 
@@ -15,6 +15,9 @@ Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina m
 - PostgreSQL
 - Mailpit
 - Docker e Docker Compose
+- Kubernetes e Kustomize
+- Amazon ECR e Amazon EKS
+- GitHub Actions
 - H2 para testes
 - SonarQube para analise local de qualidade e seguranca
 
@@ -25,7 +28,7 @@ Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina m
 - `automotiveservice`: catalogo de servicos automotivos, valor base e tempo estimado.
 - `inventory`: cadastro de itens de estoque e movimentacoes de entrada, baixa e ajuste.
 - `serviceorder`: ordem de servico, diagnostico, orcamento, itens, insumos, status e acompanhamento.
-- `shared`: seguranca JWT, tratamento global de erros, Swagger, email e configuracoes comuns.
+- `shared`: contexto autenticado, autorizacao, tratamento global de erros, Swagger, email e configuracoes comuns.
 
 ## Como Rodar com Um Comando
 
@@ -169,6 +172,24 @@ src/main/resources/db/migrations
 ```
 
 O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas no PostgreSQL.
+
+## Deploy no Kubernetes
+
+Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlays separados:
+
+- `develop` publica a imagem no ECR e faz deploy em `numberone-homolog`;
+- `main` publica a imagem no ECR e faz deploy em `numberone-production`.
+
+Cada imagem recebe como tag o SHA completo do commit. O pipeline aplica o
+Deployment, Service interno, HPA e PodDisruptionBudget, aguarda o rollout e
+executa um smoke test em `/api/public/health`.
+
+O Service permanece como `ClusterIP`. A exposicao externa deve ser feita pela
+integracao com o API Gateway para impedir que clientes contornem o Authorizer.
+
+O deploy requer que o RDS esteja provisionado e que os environments `homolog`
+e `production` possuam as variaveis e secrets descritos em
+[`k8s/README.md`](k8s/README.md).
 
 ## Testes
 
