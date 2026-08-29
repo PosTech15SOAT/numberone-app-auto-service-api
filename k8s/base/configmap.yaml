@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: numberone-api-config
+  labels:
+    app.kubernetes.io/name: numberone-auto-service-api
+    app.kubernetes.io/component: api
+data:
+  AUTHENTICATED_USER_PROVIDER: gateway
+  AUTHENTICATED_SUBJECT_HEADER: X-Authenticated-Subject
+  AUTHENTICATED_CUSTOMER_ID_HEADER: X-Authenticated-Customer-Id
+  AUTHENTICATED_STATUS_HEADER: X-Authenticated-Status
+  AUTHENTICATED_ROLES_HEADER: X-Authenticated-Roles
+  AUTHENTICATED_PERMISSIONS_HEADER: X-Authenticated-Permissions
+  CORRELATION_ID_HEADER: X-Correlation-Id
