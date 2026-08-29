@@ -54,7 +54,7 @@ Validacao de schema sem cluster, usando Kubeconform:
 ```bash
 kubectl kustomize k8s/overlays/homolog > homolog.yaml
 docker run --rm -v "$PWD:/workspace" ghcr.io/yannh/kubeconform:v0.8.0 \
-  -strict -summary -kubernetes-version 1.33.0 /workspace/homolog.yaml
+  -strict -summary -kubernetes-version 1.36.0 /workspace/homolog.yaml
 ```
 
 ## Fluxo de deploy

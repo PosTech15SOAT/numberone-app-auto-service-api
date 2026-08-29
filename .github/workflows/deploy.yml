@@ -99,7 +99,7 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: v1.33.0
+          version: v1.36.0
 
       - name: Configure EKS access
         run: |
