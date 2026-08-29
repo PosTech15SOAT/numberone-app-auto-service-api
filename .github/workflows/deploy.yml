@@ -155,6 +155,25 @@ jobs:
             --namespace "$K8S_NAMESPACE" \
             --timeout=10m
 
+      - name: Wait for internal load balancer
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..60}; do
+            LOAD_BALANCER_HOSTNAME="$(kubectl get service numberone-api-service \
+              --namespace "$K8S_NAMESPACE" \
+              --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+            if [[ -n "$LOAD_BALANCER_HOSTNAME" ]]; then
+              echo "LOAD_BALANCER_HOSTNAME=$LOAD_BALANCER_HOSTNAME" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          kubectl describe service numberone-api-service --namespace "$K8S_NAMESPACE"
+          echo "::error::The internal load balancer was not provisioned within 10 minutes."
+          exit 1
+
       - name: Smoke test health endpoint
         shell: bash
         run: |
@@ -195,6 +214,8 @@ jobs:
             echo "- Namespace: $K8S_NAMESPACE"
             echo "- Image: \`$IMAGE_URI\`"
             echo "- Cluster: $EKS_CLUSTER_NAME"
+            echo "- Internal load balancer: \`$LOAD_BALANCER_HOSTNAME\`"
+            echo "- Next: run the auth Terraform deployment to create/update the API Gateway VPC Link."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Collect rollout diagnostics
