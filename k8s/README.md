@@ -30,7 +30,7 @@ de autenticacao. Este repositorio administra apenas a aplicacao principal.
 - probes de startup, readiness e liveness em `/api/public/health`;
 - requests e limits de CPU/memoria;
 - afinidade preferencial para distribuir pods entre nodes;
-- Service `ClusterIP`, sem acesso publico direto;
+- Service `LoadBalancer` com NLB interno, sem acesso publico direto;
 - HPA entre duas e cinco replicas por CPU e memoria;
 - PodDisruptionBudget com pelo menos uma replica disponivel;
 - ServiceAccount sem token montado no pod;
@@ -54,7 +54,7 @@ Validacao de schema sem cluster, usando Kubeconform:
 ```bash
 kubectl kustomize k8s/overlays/homolog > homolog.yaml
 docker run --rm -v "$PWD:/workspace" ghcr.io/yannh/kubeconform:v0.8.0 \
-  -strict -summary -kubernetes-version 1.33.0 /workspace/homolog.yaml
+  -strict -summary -kubernetes-version 1.36.0 /workspace/homolog.yaml
 ```
 
 ## Fluxo de deploy
@@ -68,7 +68,7 @@ O workflow `.github/workflows/deploy.yml` executa:
 5. configuracao do acesso ao EKS;
 6. criacao idempotente de ConfigMap e Secret de runtime;
 7. aplicacao do overlay correspondente a branch;
-8. espera pelo rollout e smoke test do health endpoint.
+8. espera pelo rollout, provisionamento do NLB interno e smoke test do health endpoint.
 
 | Branch | GitHub environment | Namespace |
 | --- | --- | --- |
@@ -118,6 +118,11 @@ atualizadas antes de executar novamente o deploy.
 - nenhum JWT ou segredo administrativo e armazenado no cluster;
 - os valores sensiveis sao materializados a partir de GitHub Secrets;
 - o provider de identidade da aplicacao e `gateway`;
-- o Service nao recebe Load Balancer publico;
+- o Service recebe somente um NLB interno nas subnets privadas;
 - o API Gateway deve remover ou sobrescrever headers de identidade enviados
   pelo cliente antes de encaminhar a requisicao.
+
+O caminho de entrada e `API Gateway -> VPC Link -> NLB interno -> Service -> Pods`.
+Os overlays reservam `30080` para homologacao e `30081` para producao; essas
+portas devem permanecer alinhadas com as regras declaradas no repositorio
+`postech15soat-infra-cloud`.

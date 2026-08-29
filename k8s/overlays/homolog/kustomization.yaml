@@ -17,3 +17,4 @@ labels:
 
 patches:
   - path: configmap-patch.yaml
+  - path: service-patch.yaml

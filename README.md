@@ -181,11 +181,12 @@ Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlays
 - `main` publica a imagem no ECR e faz deploy em `numberone-production`.
 
 Cada imagem recebe como tag o SHA completo do commit. O pipeline aplica o
-Deployment, Service interno, HPA e PodDisruptionBudget, aguarda o rollout e
-executa um smoke test em `/api/public/health`.
+Deployment, NLB interno, HPA e PodDisruptionBudget, aguarda o rollout e executa
+um smoke test em `/api/public/health`.
 
-O Service permanece como `ClusterIP`. A exposicao externa deve ser feita pela
-integracao com o API Gateway para impedir que clientes contornem o Authorizer.
+O Service e do tipo `LoadBalancer`, mas usa um NLB interno nas subnets privadas.
+A entrada externa ocorre exclusivamente pelo caminho `API Gateway -> VPC Link
+-> NLB`, impedindo que clientes contornem o Authorizer.
 
 O deploy requer que o RDS esteja provisionado e que os environments `homolog`
 e `production` possuam as variaveis e secrets descritos em
