@@ -30,8 +30,8 @@ import br.com.fiap.numberone.serviceorder.domain.exceptions.ServiceOrderItemAlre
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderValue;
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
-import br.com.fiap.numberone.shared.security.infrastructure.repositories.AdminUserRepository;
-import br.com.fiap.numberone.shared.security.infrastructure.token.JwtService;
+import br.com.fiap.numberone.shared.security.infrastructure.authorization.AuthenticatedCustomerAccess;
+import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static br.com.fiap.numberone.serviceorder.support.ServiceOrderTestFixtures.activeAutomotiveService;
+import static br.com.fiap.numberone.serviceorder.support.ServiceOrderTestFixtures.activeCustomer;
 import static br.com.fiap.numberone.serviceorder.support.ServiceOrderTestFixtures.inventoryItem;
 import static br.com.fiap.numberone.serviceorder.support.ServiceOrderTestFixtures.serviceOrder;
 import static br.com.fiap.numberone.serviceorder.support.ServiceOrderTestFixtures.serviceOrderItem;
@@ -109,10 +110,10 @@ class ServiceOrderControllerIT {
     private ServiceOrderTrackingService trackingService;
 
     @MockitoBean
-    private JwtService jwtService;
+    private AuthenticatedCustomerAccess authenticatedCustomerAccess;
 
     @MockitoBean
-    private AdminUserRepository adminUserRepository;
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @Test
     void shouldCreateServiceOrder() throws Exception {
@@ -242,6 +243,8 @@ class ServiceOrderControllerIT {
     void shouldApproveBudgetFromPublicEmailLink() throws Exception {
         // Arrange
         UUID budgetId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        when(budgetService.getCustomerId(budgetId)).thenReturn(customerId);
         when(budgetService.approve(budgetId)).thenReturn(ServiceOrderBudget.builder()
                 .id(budgetId)
                 .status(ServiceOrderBudgetStatus.APPROVED)
@@ -251,6 +254,8 @@ class ServiceOrderControllerIT {
         mockMvc.perform(get("/api/public/orcamentos-ordem-servico/{id}/aprovacao/aprovar", budgetId))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Orcamento aprovado com sucesso."));
+
+        verify(authenticatedCustomerAccess).requireCurrentUserOwnershipOrAdmin(customerId);
     }
 
     @Test
@@ -423,6 +428,7 @@ class ServiceOrderControllerIT {
         UUID serviceOrderId = UUID.randomUUID();
         UUID serviceOrderItemId = UUID.randomUUID();
         UUID vehicleId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
         ServiceOrder serviceOrderReference = ServiceOrder.builder().id(serviceOrderId).build();
         ServiceOrderItem serviceOrderItem = serviceOrderItem(
                 serviceOrderItemId,
@@ -452,6 +458,7 @@ class ServiceOrderControllerIT {
                 .initialDescription("Barulho no motor")
                 .finalDiagnosisDescription("Trocar correia")
                 .vehicle(vehicle(vehicleId, UUID.randomUUID()))
+                .customer(activeCustomer(customerId))
                 .status(ServiceOrderStatus.APPROVED)
                 .entryDateTime(LocalDateTime.of(2026, 4, 1, 9, 0))
                 .expectedDateTime(LocalDateTime.of(2026, 4, 3, 18, 0))
@@ -473,5 +480,7 @@ class ServiceOrderControllerIT {
                 .andExpect(jsonPath("$.itensServico[0].id").value(serviceOrderItemId.toString()))
                 .andExpect(jsonPath("$.itensServico[0].nomeServico").value("Troca de oleo"))
                 .andExpect(jsonPath("$.itensServico[0].status").value("EM_EXECUCAO"));
+
+        verify(authenticatedCustomerAccess).requireCurrentUserOwnershipOrAdmin(customerId);
     }
 }

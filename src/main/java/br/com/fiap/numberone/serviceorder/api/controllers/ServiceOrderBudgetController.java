@@ -6,6 +6,7 @@ import br.com.fiap.numberone.serviceorder.api.mappers.ServiceOrderBudgetApiMappe
 import br.com.fiap.numberone.serviceorder.application.services.ServiceOrderBudgetService;
 import br.com.fiap.numberone.serviceorder.domain.entities.ServiceOrderBudget;
 import br.com.fiap.numberone.serviceorder.domain.entities.ServiceOrder;
+import br.com.fiap.numberone.shared.security.infrastructure.authorization.AuthenticatedCustomerAccess;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +21,16 @@ public class ServiceOrderBudgetController {
 
     private final ServiceOrderBudgetApiMapper budgetApiMapper;
     private final ServiceOrderBudgetService budgetService;
+    private final AuthenticatedCustomerAccess authenticatedCustomerAccess;
 
     public ServiceOrderBudgetController(
             ServiceOrderBudgetApiMapper budgetApiMapper,
-            ServiceOrderBudgetService budgetService
+            ServiceOrderBudgetService budgetService,
+            AuthenticatedCustomerAccess authenticatedCustomerAccess
     ) {
         this.budgetApiMapper = budgetApiMapper;
         this.budgetService = budgetService;
+        this.authenticatedCustomerAccess = authenticatedCustomerAccess;
     }
 
     @PostMapping("/admin/ordens-servico/{serviceOrderId}/orcamentos")
@@ -66,13 +70,19 @@ public class ServiceOrderBudgetController {
     }
 
     @GetMapping("/public/orcamentos-ordem-servico/{id}/aprovacao/aprovar")
-    public ResponseEntity<String> approveBudgetByEmailLink(@PathVariable UUID id) {
+    public ResponseEntity<String> approveBudgetByEmailLink(
+            @PathVariable UUID id
+    ) {
+        authenticatedCustomerAccess.requireCurrentUserOwnershipOrAdmin(budgetService.getCustomerId(id));
         budgetService.approve(id);
         return ResponseEntity.ok("Orcamento aprovado com sucesso.");
     }
 
     @GetMapping("/public/orcamentos-ordem-servico/{id}/aprovacao/rejeitar")
-    public ResponseEntity<String> rejectBudgetByEmailLink(@PathVariable UUID id) {
+    public ResponseEntity<String> rejectBudgetByEmailLink(
+            @PathVariable UUID id
+    ) {
+        authenticatedCustomerAccess.requireCurrentUserOwnershipOrAdmin(budgetService.getCustomerId(id));
         budgetService.reject(id);
         return ResponseEntity.ok("Orcamento rejeitado com sucesso.");
     }

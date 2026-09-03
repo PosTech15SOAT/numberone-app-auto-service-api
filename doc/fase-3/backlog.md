@@ -8,9 +8,9 @@
 - [ ] Configurar protecao de `main` e `develop` no GitHub.
 - [ ] Adicionar os integrantes e o usuario `soat-architecture`.
 - [ ] Validar com Marcelo o contrato do Lambda Authorizer.
-- [ ] Criar `AuthenticatedUser` e `AuthenticatedUserProvider`.
-- [ ] Criar provider local para desenvolvimento independente.
-- [ ] Criar provider para o contexto confiavel do API Gateway.
+- [x] Criar `AuthenticatedUser` e `AuthenticatedUserProvider`.
+- [x] Criar provider local para desenvolvimento independente.
+- [x] Criar provider para o contexto confiavel do API Gateway.
 - [ ] Remover login, emissao de JWT e bootstrap administrativo da aplicacao.
 - [ ] Remover dependencia da tabela `admin_users` do dominio da aplicacao.
 - [ ] Aplicar roles e permissions aos endpoints protegidos.

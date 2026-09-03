@@ -43,6 +43,34 @@ jobs:
       - name: Build container image
         run: docker build --tag numberone-auto-service-api:${{ github.sha }} .
 
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.0
+
+      - name: Validate Kubernetes overlays
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rendered-manifests
+          for environment in homolog production; do
+            kubectl kustomize "k8s/overlays/${environment}" \
+              > "rendered-manifests/${environment}.yaml"
+          done
+
+          docker run --rm \
+            --volume "$PWD:/workspace" \
+            ghcr.io/yannh/kubeconform:v0.8.0 \
+            -strict \
+            -summary \
+            -kubernetes-version 1.36.0 \
+            /workspace/rendered-manifests
+
+          if grep -R -E 'JWT_SECRET|BOOTSTRAP_ADMIN_(USERNAME|PASSWORD)' k8s; then
+            echo "::error::Obsolete application-managed authentication secret found."
+            exit 1
+          fi
+
       - name: Publish test reports
         if: always()
         uses: actions/upload-artifact@v7

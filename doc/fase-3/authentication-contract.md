@@ -1,6 +1,6 @@
 # Contrato de autenticacao
 
-Status: rascunho aguardando validacao com o responsavel pela Lambda e pelo API Gateway.
+Status: contrato provisório implementado, aguardando validação com o responsável pela Lambda e pelo API Gateway.
 
 ## Responsabilidades
 
@@ -35,6 +35,28 @@ Status: rascunho aguardando validacao com o responsavel pela Lambda e pelo API G
 | `roles` | sim | Papeis atribuidos ao usuario. |
 | `permissions` | sim | Permissoes efetivas. |
 | `correlationId` | sim | Identificador de correlacao da requisicao. |
+
+## Headers provisórios do API Gateway
+
+Os nomes são configuráveis por variáveis de ambiente para que o contrato possa
+ser ajustado sem alterar código. Os valores padrão são:
+
+| Campo | Header padrão | Formato |
+|---|---|---|
+| `subject` | `X-Authenticated-Subject` | texto não vazio |
+| `customerId` | `X-Authenticated-Customer-Id` | UUID; opcional para identidades sem cliente |
+| `status` | `X-Authenticated-Status` | texto; `ACTIVE` representa usuário ativo |
+| `roles` | `X-Authenticated-Roles` | lista separada por vírgulas |
+| `permissions` | `X-Authenticated-Permissions` | lista separada por vírgulas; pode ser vazia |
+| `correlationId` | `X-Correlation-Id` | texto não vazio |
+
+O CPF não é propagado neste contrato provisório. A aplicação considera uma
+requisição anônima quando `X-Authenticated-Subject` não está presente. Se o
+subject estiver presente, todos os demais headers obrigatórios devem ser
+válidos; contexto parcial é rejeitado.
+
+Em produção, esses headers só são confiáveis se o tráfego direto aos pods for
+bloqueado e o API Gateway remover ou sobrescrever valores enviados pelo cliente.
 
 ## Decisoes pendentes
 

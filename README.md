@@ -1,8 +1,8 @@
 # NumberOne Auto Service API
 
-Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina mecanica. Este repositorio foi migrado da solucao desenvolvida nas fases anteriores e sera evoluido para operar em Kubernetes, atras de um API Gateway e integrado a um Lambda Authorizer.
+Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina mecanica. Este repositorio foi migrado da solucao desenvolvida nas fases anteriores para operar em Kubernetes, atras de um API Gateway e integrado a um Lambda Authorizer.
 
-> Estado da migracao: o codigo legado ainda possui autenticacao JWT interna. A substituicao pelo contexto autenticado fornecido pelo API Gateway esta registrada no backlog da Fase 3.
+> A aplicacao nao emite nem valida JWT de clientes. O API Gateway e o Lambda Authorizer validam o token e encaminham um contexto de identidade confiavel.
 
 ## Stack
 
@@ -15,6 +15,9 @@ Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina m
 - PostgreSQL
 - Mailpit
 - Docker e Docker Compose
+- Kubernetes e Kustomize
+- Amazon ECR e Amazon EKS
+- GitHub Actions
 - H2 para testes
 - SonarQube para analise local de qualidade e seguranca
 
@@ -25,7 +28,7 @@ Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina m
 - `automotiveservice`: catalogo de servicos automotivos, valor base e tempo estimado.
 - `inventory`: cadastro de itens de estoque e movimentacoes de entrada, baixa e ajuste.
 - `serviceorder`: ordem de servico, diagnostico, orcamento, itens, insumos, status e acompanhamento.
-- `shared`: seguranca JWT, tratamento global de erros, Swagger, email e configuracoes comuns.
+- `shared`: contexto autenticado, autorizacao, tratamento global de erros, Swagger, email e configuracoes comuns.
 
 ## Como Rodar com Um Comando
 
@@ -92,7 +95,7 @@ Rode a aplicacao localmente:
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-O profile `local` carrega `src/main/resources/application-local.properties`, com defaults para banco local, Mailpit, JWT e usuario admin de desenvolvimento.
+O profile `local` carrega `src/main/resources/application-local.properties`, com defaults para banco local, Mailpit e uma identidade ADMIN exclusiva para desenvolvimento.
 
 Sem profile ativo, a aplicacao usa `src/main/resources/application.properties`, que e a configuracao produtiva empacotada na imagem Docker. Nesse modo, valores sensiveis e dependentes do ambiente devem ser informados por variaveis de ambiente.
 
@@ -109,35 +112,13 @@ Configuracao local padrao:
 - password: `admin`
 - JDBC: `jdbc:postgresql://localhost:5432/numberone`
 
-## Autenticacao JWT
+## Autenticacao e autorizacao
 
-Ao subir a aplicacao, um usuario administrativo e criado automaticamente caso a tabela `admin_users` esteja vazia.
+Em producao, o JWT e emitido pela Lambda de autenticacao e validado pelo Lambda Authorizer. O API Gateway remove ou sobrescreve headers enviados pelo cliente e encaminha para esta API apenas o contexto de identidade confiavel. A aplicacao converte esse contexto em um usuario do Spring Security e aplica roles, permissions e propriedade do recurso.
 
-Credenciais locais:
+A API nao possui mais endpoint de login, senha administrativa ou validacao propria de JWT.
 
-- usuario: `admin`
-- senha: `admin123456`
-
-Login:
-
-```text
-POST /api/public/auth/login
-```
-
-Body:
-
-```json
-{
-  "username": "admin",
-  "password": "admin123456"
-}
-```
-
-Use o token retornado nas rotas administrativas:
-
-```text
-Authorization: Bearer <token>
-```
+No profile `local`, a identidade e definida pelas variaveis `LOCAL_AUTHENTICATED_SUBJECT`, `LOCAL_AUTHENTICATED_CUSTOMER_ID`, `LOCAL_AUTHENTICATED_STATUS`, `LOCAL_AUTHENTICATED_ROLES` e `LOCAL_AUTHENTICATED_PERMISSIONS`. Os defaults representam um administrador ativo e permitem usar Swagger sem login. Esse provider nao deve ser habilitado em producao.
 
 ## Swagger
 
@@ -147,18 +128,16 @@ Com a aplicacao rodando:
 http://localhost:8080/swagger-ui.html
 ```
 
-O Swagger usa o esquema `bearerAuth`. Para testar rotas administrativas, faca login, copie o `accessToken`, clique em `Authorize` e informe:
-
-```text
-Bearer <token>
-```
+Com o profile `local`, o Swagger usa automaticamente a identidade local configurada.
 
 ## Endpoints Principais
 
 Publicos:
 
 - `GET /api/public/health`
-- `POST /api/public/auth/login`
+
+Autenticados como cliente proprietario ou administrador:
+
 - `GET /api/public/ordens-servico/{id}/acompanhamento`
 - `GET /api/public/orcamentos-ordem-servico/{id}/aprovacao/aprovar`
 - `GET /api/public/orcamentos-ordem-servico/{id}/aprovacao/rejeitar`
@@ -193,6 +172,25 @@ src/main/resources/db/migrations
 ```
 
 O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas no PostgreSQL.
+
+## Deploy no Kubernetes
+
+Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlays separados:
+
+- `develop` publica a imagem no ECR e faz deploy em `numberone-homolog`;
+- `main` publica a imagem no ECR e faz deploy em `numberone-production`.
+
+Cada imagem recebe como tag o SHA completo do commit. O pipeline aplica o
+Deployment, NLB interno, HPA e PodDisruptionBudget, aguarda o rollout e executa
+um smoke test em `/api/public/health`.
+
+O Service e do tipo `LoadBalancer`, mas usa um NLB interno nas subnets privadas.
+A entrada externa ocorre exclusivamente pelo caminho `API Gateway -> VPC Link
+-> NLB`, impedindo que clientes contornem o Authorizer.
+
+O deploy requer que o RDS esteja provisionado e que os environments `homolog`
+e `production` possuam as variaveis e secrets descritos em
+[`k8s/README.md`](k8s/README.md).
 
 ## Testes
 
