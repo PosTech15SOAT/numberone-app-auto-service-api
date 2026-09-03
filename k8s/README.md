@@ -87,8 +87,8 @@ quando os ambientes tiverem dependencias diferentes.
 | `AWS_ACCESS_KEY_ID` | Credencial temporaria do AWS Academy |
 | `AWS_SECRET_ACCESS_KEY` | Credencial temporaria do AWS Academy |
 | `AWS_SESSION_TOKEN` | Token obrigatorio da sessao do Learner Lab |
-| `DB_USERNAME` | Usuario do PostgreSQL/RDS |
-| `DB_PASSWORD` | Senha do PostgreSQL/RDS |
+| `DB_USERNAME` | Não é mais necessário: obtido do secret gerenciado pelo RDS |
+| `DB_PASSWORD` | Não é mais necessário: obtido do secret gerenciado pelo RDS |
 | `MAIL_USERNAME` | Usuario SMTP; pode ser vazio quando autenticacao estiver desabilitada |
 | `MAIL_PASSWORD` | Senha SMTP; pode ser vazia quando autenticacao estiver desabilitada |
 
@@ -100,9 +100,10 @@ quando os ambientes tiverem dependencias diferentes.
 | `AWS_ACCOUNT_ID` | ID da conta do Learner Lab |
 | `ECR_REPOSITORY` | `numberone-auto-service-api` |
 | `EKS_CLUSTER_NAME` | `numberone-lab-eks` |
-| `DB_HOST` | Endpoint do RDS sem protocolo nem porta |
+| `DB_IDENTIFIER` | Identificador do RDS; padrão `numberone-lab-postgres` |
 | `DB_PORT` | `5432` |
 | `DB_NAME` | `numberone` |
+| `DB_SSL_MODE` | Modo SSL do PostgreSQL; padrão `require` |
 | `MAIL_HOST` | Host SMTP acessivel pelo cluster |
 | `MAIL_PORT` | `587` ou a porta do provedor escolhido |
 | `MAIL_SMTP_AUTH` | `true` ou `false` |
