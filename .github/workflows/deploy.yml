@@ -4,26 +4,26 @@ on:
   push:
     branches:
       - main
-      - develop
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-api-${{ github.ref_name }}
+  group: deploy-api-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy ${{ github.ref_name == 'main' && 'production' || 'homolog' }}
+    name: Deploy production
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    environment: ${{ github.ref_name == 'main' && 'production' || 'homolog' }}
+    environment: production
 
     env:
-      DEPLOYMENT_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'homolog' }}
-      K8S_NAMESPACE: ${{ github.ref_name == 'main' && 'numberone-production' || 'numberone-homolog' }}
+      DEPLOYMENT_ENVIRONMENT: production
+      K8S_NAMESPACE: numberone-production
       AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'numberone-auto-service-api' }}

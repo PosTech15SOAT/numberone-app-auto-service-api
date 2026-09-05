@@ -177,7 +177,7 @@ O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas 
 
 Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlays separados:
 
-- `develop` publica a imagem no ECR e faz deploy em `numberone-homolog`;
+- `develop` executa testes, build e validacao dos manifests sem publicar ou implantar;
 - `main` publica a imagem no ECR e faz deploy em `numberone-production`.
 
 Cada imagem recebe como tag o SHA completo do commit. O pipeline aplica o
@@ -188,8 +188,8 @@ O Service e do tipo `LoadBalancer`, mas usa um NLB interno nas subnets privadas.
 A entrada externa ocorre exclusivamente pelo caminho `API Gateway -> VPC Link
 -> NLB`, impedindo que clientes contornem o Authorizer.
 
-O deploy requer que o RDS esteja provisionado e que os environments `homolog`
-e `production` possuam as variaveis e secrets descritos em
+O deploy requer que o RDS esteja provisionado e que o environment `production`
+possua as variaveis e secrets descritos em
 [`k8s/README.md`](k8s/README.md).
 
 ## Testes
