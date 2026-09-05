@@ -1,7 +1,8 @@
 # Kubernetes da API
 
 Os manifests da aplicacao usam Kustomize para compartilhar a configuracao
-comum e isolar homologacao e producao no mesmo cluster EKS.
+comum. O overlay de homologacao e mantido apenas para validacao; somente o
+overlay de producao e aplicado no cluster EKS.
 
 ## Estrutura
 
@@ -67,18 +68,18 @@ O workflow `.github/workflows/deploy.yml` executa:
 4. push da imagem com tag igual ao SHA do commit;
 5. configuracao do acesso ao EKS;
 6. criacao idempotente de ConfigMap e Secret de runtime;
-7. aplicacao do overlay correspondente a branch;
+7. aplicacao do overlay de producao;
 8. espera pelo rollout, provisionamento do NLB interno e smoke test do health endpoint.
 
 | Branch | GitHub environment | Namespace |
 | --- | --- | --- |
-| `develop` | `homolog` | `numberone-homolog` |
+| `develop` | Nenhum deploy; somente CI e validacao dos overlays | - |
 | `main` | `production` | `numberone-production` |
 
 ## Configuracao dos GitHub environments
 
-Configure os mesmos nomes em `homolog` e `production`, alterando os valores
-quando os ambientes tiverem dependencias diferentes.
+Configure os nomes abaixo no environment `production`. O environment `homolog`
+nao e usado para deploy; os commits em `develop` sao validados pelo workflow de CI.
 
 ### Secrets
 
