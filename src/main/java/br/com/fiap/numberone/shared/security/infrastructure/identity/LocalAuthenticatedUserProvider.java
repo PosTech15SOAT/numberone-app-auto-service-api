@@ -1,5 +1,6 @@
 package br.com.fiap.numberone.shared.security.infrastructure.identity;
 
+import br.com.fiap.numberone.shared.infrastructure.correlation.CorrelationIdResolver;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
 import br.com.fiap.numberone.shared.security.domain.valueobjects.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 @RequestScope
@@ -19,10 +19,7 @@ public class LocalAuthenticatedUserProvider implements AuthenticatedUserProvider
 
 	public LocalAuthenticatedUserProvider(HttpServletRequest request, AuthenticatedUserProperties properties) {
 		AuthenticatedUserProperties.Local local = properties.getLocal();
-		String correlationId = request.getHeader(properties.getHeaders().getCorrelationId());
-		if (correlationId == null || correlationId.isBlank()) {
-			correlationId = UUID.randomUUID().toString();
-		}
+		String correlationId = CorrelationIdResolver.resolve(request, properties.getHeaders().getCorrelationId());
 
 		this.authenticatedUser = new AuthenticatedUser(
 			local.getSubject(),

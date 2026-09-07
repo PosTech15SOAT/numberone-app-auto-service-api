@@ -136,6 +136,16 @@ Publicos:
 
 - `GET /api/public/health`
 
+## Correlacao de requisicoes
+
+A API exige `X-Correlation-Id` em todas as requisicoes HTTP. O consumidor deve
+enviar um valor nao vazio, por exemplo `X-Correlation-Id: teste-julio-os-001`.
+
+O valor resolvido fica disponivel durante a requisicao em `MDC` como
+`correlation_id` e aparece nos logs estruturados. A API nao gera nem devolve esse
+header na resposta. Campos de tracing do Datadog, como `dd.trace_id` e
+`dd.span_id`, permanecem independentes.
+
 Autenticados como cliente proprietario ou administrador:
 
 - `GET /api/public/ordens-servico/{id}/acompanhamento`

@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LocalAuthenticatedUserProviderTest {
@@ -34,13 +34,11 @@ class LocalAuthenticatedUserProviderTest {
 	}
 
 	@Test
-	void shouldGenerateCorrelationIdWhenHeaderIsAbsent() {
-		AuthenticatedUser user = new LocalAuthenticatedUserProvider(
-			new MockHttpServletRequest(),
-			properties(null)
-		).currentUser().orElseThrow();
-
-		assertNotNull(UUID.fromString(user.correlationId()));
+	void shouldRejectWhenCorrelationIdIsAbsent() {
+		assertThrows(
+			RuntimeException.class,
+			() -> new LocalAuthenticatedUserProvider(new MockHttpServletRequest(), properties(null))
+		);
 	}
 
 	private AuthenticatedUserProperties properties(UUID customerId) {

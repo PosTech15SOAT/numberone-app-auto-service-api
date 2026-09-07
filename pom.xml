@@ -9,7 +9,7 @@
 		<relativePath/>
 	</parent>
 	<groupId>br.com.fiap</groupId>
-	<artifactId>numberone</artifactId>
+	<artifactId>numberone-app-auto-service-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>

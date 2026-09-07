@@ -1,5 +1,6 @@
 package br.com.fiap.numberone.shared.security.infrastructure.identity;
 
+import br.com.fiap.numberone.shared.infrastructure.correlation.CorrelationIdResolver;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
 import br.com.fiap.numberone.shared.security.domain.exceptions.InvalidAuthenticatedUserContextException;
 import br.com.fiap.numberone.shared.security.domain.valueobjects.AuthenticatedUser;
@@ -47,7 +48,7 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 		String status = requiredHeader(request, headers.getStatus());
 		String roles = requiredHeader(request, headers.getRoles());
 		String permissions = requiredHeaderAllowingEmpty(request, headers.getPermissions());
-		String correlationId = requiredHeader(request, headers.getCorrelationId());
+		String correlationId = CorrelationIdResolver.resolve(request, headers.getCorrelationId());
 		UUID customerId = parseCustomerId(request.getHeader(headers.getCustomerId()), headers.getCustomerId());
 
 		try {
