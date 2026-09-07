@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: numberone-homolog
+  labels:
+    app.kubernetes.io/part-of: numberone
+    environment: homolog
