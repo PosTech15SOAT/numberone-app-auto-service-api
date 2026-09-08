@@ -4,6 +4,8 @@ import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedU
 import br.com.fiap.numberone.shared.security.infrastructure.http.AuthenticatedUserAuthenticationFilter;
 import br.com.fiap.numberone.shared.security.infrastructure.http.RestAccessDeniedHandler;
 import br.com.fiap.numberone.shared.security.infrastructure.http.RestAuthenticationEntryPoint;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpoint;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,13 +21,11 @@ public class SecurityConfiguration {
 	@Bean
 	AuthenticatedUserAuthenticationFilter authenticatedUserAuthenticationFilter(
 		AuthenticatedUserProvider authenticatedUserProvider,
-		RestAuthenticationEntryPoint authenticationEntryPoint,
-		RestAccessDeniedHandler accessDeniedHandler
+		RestAuthenticationEntryPoint authenticationEntryPoint
 	) {
 		return new AuthenticatedUserAuthenticationFilter(
 			authenticatedUserProvider,
-			authenticationEntryPoint,
-			accessDeniedHandler
+			authenticationEntryPoint
 		);
 	}
 
@@ -46,6 +46,7 @@ public class SecurityConfiguration {
 				.authenticationEntryPoint(authenticationEntryPoint)
 				.accessDeniedHandler(accessDeniedHandler))
 			.authorizeHttpRequests(authorize -> authorize
+				.requestMatchers(EndpointRequest.to(HealthEndpoint.class)).permitAll()
 				.requestMatchers("/api/public/health").permitAll()
 				.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/public/ordens-servico/*/acompanhamento")

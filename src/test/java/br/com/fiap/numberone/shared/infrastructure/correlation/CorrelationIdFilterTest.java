@@ -41,7 +41,7 @@ class CorrelationIdFilterTest {
 
 	@Test
 	void shouldExposeCorrelationIdInMdcRequestAttributeAndResponse() throws Exception {
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = apiRequest();
 		request.addHeader(CorrelationIdResolver.DEFAULT_HEADER_NAME, "teste-numberone-123");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		AtomicReference<String> correlationIdInChain = new AtomicReference<>();
@@ -58,7 +58,7 @@ class CorrelationIdFilterTest {
 
 	@Test
 	void shouldRejectRequestWhenHeaderIsAbsent() throws Exception {
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = apiRequest();
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
 		filter.doFilter(request, response, new MockFilterChain());
@@ -71,7 +71,7 @@ class CorrelationIdFilterTest {
 
 	@Test
 	void shouldRejectRequestWhenHeaderIsBlank() throws Exception {
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = apiRequest();
 		request.addHeader(CorrelationIdResolver.DEFAULT_HEADER_NAME, " ");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -86,7 +86,7 @@ class CorrelationIdFilterTest {
 		MDC.put("dd.trace_id", "trace-1");
 		MDC.put("dd.span_id", "span-1");
 
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = apiRequest();
 		request.addHeader(CorrelationIdResolver.DEFAULT_HEADER_NAME, "datadog-correlation");
 
 		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
@@ -98,7 +98,7 @@ class CorrelationIdFilterTest {
 
 	@Test
 	void shouldCleanupMdcOnErrorsWithoutReturningCorrelationIdHeader() {
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = apiRequest();
 		request.addHeader(CorrelationIdResolver.DEFAULT_HEADER_NAME, "error-correlation");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -119,7 +119,7 @@ class CorrelationIdFilterTest {
 		appender.start();
 		logger.addAppender(appender);
 
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = apiRequest();
 		request.addHeader(CorrelationIdResolver.DEFAULT_HEADER_NAME, "teste-julio-os-001");
 
 		try {
@@ -135,5 +135,23 @@ class CorrelationIdFilterTest {
 			.findFirst()
 			.orElseThrow();
 		assertEquals("teste-julio-os-001", event.getMDCPropertyMap().get("correlation_id"));
+	}
+
+	@Test
+	void shouldNotRequireCorrelationIdOutsideApplicationApiPaths() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/actuator/health/liveness");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		AtomicReference<Boolean> chainCalled = new AtomicReference<>(false);
+
+		filter.doFilter(request, response, (servletRequest, servletResponse) -> chainCalled.set(true));
+
+		assertEquals(true, chainCalled.get());
+		assertEquals(200, response.getStatus());
+		assertNull(request.getAttribute(CorrelationIdResolver.REQUEST_ATTRIBUTE));
+		assertNull(MDC.get(CorrelationIdResolver.MDC_KEY));
+	}
+
+	private MockHttpServletRequest apiRequest() {
+		return new MockHttpServletRequest("GET", "/api/public/health");
 	}
 }

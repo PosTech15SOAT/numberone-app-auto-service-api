@@ -19,12 +19,28 @@ import java.io.IOException;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
+	private static final String APPLICATION_API_PATH_PREFIX = "/api/";
+
 	private final AuthenticatedUserProperties properties;
 	private final HttpErrorResponseWriter errorResponseWriter;
 
 	public CorrelationIdFilter(AuthenticatedUserProperties properties, HttpErrorResponseWriter errorResponseWriter) {
 		this.properties = properties;
 		this.errorResponseWriter = errorResponseWriter;
+	}
+
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) {
+		return !applicationPath(request).startsWith(APPLICATION_API_PATH_PREFIX);
+	}
+
+	private String applicationPath(HttpServletRequest request) {
+		String requestUri = request.getRequestURI();
+		String contextPath = request.getContextPath();
+		if (contextPath != null && !contextPath.isBlank() && requestUri.startsWith(contextPath)) {
+			return requestUri.substring(contextPath.length());
+		}
+		return requestUri;
 	}
 
 	@Override

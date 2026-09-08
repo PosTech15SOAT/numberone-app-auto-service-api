@@ -23,7 +23,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest(
 	webEnvironment = WebEnvironment.RANDOM_PORT,
-	properties = "app.security.identity.provider=gateway"
+	properties = {
+		"app.security.identity.provider=gateway",
+		"management.health.db.enabled=false",
+		"management.health.mail.enabled=false"
+	}
 )
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -45,6 +49,64 @@ class SecurityIT {
 	}
 
 	@Test
+	void shouldExposeActuatorHealthEndpointWithoutIdentityWhenCorrelationIdIsPresent() throws Exception {
+		mockMvc.perform(get("/actuator/health")
+				.header("X-Correlation-Id", "actuator-health-correlation"))
+			.andExpect(status().isOk())
+			.andExpect(header().doesNotExist("X-Correlation-Id"))
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void shouldExposeActuatorLivenessEndpointWithoutIdentityWhenCorrelationIdIsPresent() throws Exception {
+		mockMvc.perform(get("/actuator/health/liveness")
+				.header("X-Correlation-Id", "actuator-liveness-correlation"))
+			.andExpect(status().isOk())
+			.andExpect(header().doesNotExist("X-Correlation-Id"))
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void shouldExposeActuatorReadinessEndpointWithoutIdentityWhenCorrelationIdIsPresent() throws Exception {
+		mockMvc.perform(get("/actuator/health/readiness")
+				.header("X-Correlation-Id", "actuator-readiness-correlation"))
+			.andExpect(status().isOk())
+			.andExpect(header().doesNotExist("X-Correlation-Id"))
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void shouldExposeActuatorHealthEndpointWithoutCorrelationId() throws Exception {
+		mockMvc.perform(get("/actuator/health"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void shouldExposeActuatorLivenessEndpointWithoutCorrelationId() throws Exception {
+		mockMvc.perform(get("/actuator/health/liveness"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void shouldExposeActuatorReadinessEndpointWithoutCorrelationId() throws Exception {
+		mockMvc.perform(get("/actuator/health/readiness"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void shouldNotExposeOtherActuatorEndpoints() throws Exception {
+		mockMvc.perform(get("/actuator/env")
+				.header("X-Correlation-Id", "actuator-env-correlation"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.status").value(401))
+			.andExpect(jsonPath("$.message").value("Autenticacao obrigatoria para acessar este recurso."))
+			.andExpect(jsonPath("$.errors").isEmpty());
+	}
+
+	@Test
 	void shouldRejectAdminEndpointWithoutIdentity() throws Exception {
 		mockMvc.perform(get("/api/admin/session")
 				.header("X-Correlation-Id", "unauthorized-correlation"))
@@ -53,6 +115,16 @@ class SecurityIT {
 			.andExpect(jsonPath("$.message").value("Autenticacao obrigatoria para acessar este recurso."))
 			.andExpect(jsonPath("$.errors").isEmpty())
 			.andExpect(header().doesNotExist("X-Correlation-Id"));
+	}
+
+	@Test
+	void shouldRejectProtectedApiEndpointWithoutIdentity() throws Exception {
+		mockMvc.perform(get("/api/admin/servicos")
+				.header("X-Correlation-Id", "protected-without-identity"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.status").value(401))
+			.andExpect(jsonPath("$.message").value("Autenticacao obrigatoria para acessar este recurso."))
+			.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
 	@Test
@@ -101,12 +173,12 @@ class SecurityIT {
 	}
 
 	@Test
-	void shouldRejectInactiveUser() throws Exception {
+	void shouldRejectInactiveUserAsInvalidAuthenticationContext() throws Exception {
 		mockMvc.perform(get("/api/admin/session")
 				.headers(identityHeaders("ADMIN", "", "INACTIVE", null)))
-			.andExpect(status().isForbidden())
-			.andExpect(jsonPath("$.status").value(403))
-			.andExpect(jsonPath("$.message").value("Acesso negado para este recurso."))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.status").value(401))
+			.andExpect(jsonPath("$.message").value("Autenticacao obrigatoria para acessar este recurso."))
 			.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
@@ -142,6 +214,13 @@ class SecurityIT {
 			.andExpect(jsonPath("$.permissions[0]").value("SERVICE_ORDER_MANAGE"))
 			.andExpect(jsonPath("$.correlationId").value("correlation-123"))
 			.andExpect(jsonPath("$.authenticated").value(true));
+	}
+
+	@Test
+	void shouldAllowProtectedApiEndpointWithValidAdminIdentity() throws Exception {
+		mockMvc.perform(get("/api/admin/servicos")
+				.headers(identityHeaders("ADMIN", "SERVICE_ORDER_MANAGE", "ACTIVE", null)))
+			.andExpect(status().isOk());
 	}
 
 	private HttpHeaders identityHeaders(String roles, String permissions, String userStatus, UUID customerId) {
