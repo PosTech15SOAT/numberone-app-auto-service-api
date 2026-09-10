@@ -3,7 +3,7 @@
 ## Fluxo de branches
 
 - `main`: codigo candidato a producao.
-- `develop`: integracao e homologacao.
+- `develop`: integracao e validacoes.
 - `feature/<descricao>`: funcionalidades.
 - `fix/<descricao>`: correcoes.
 - `docs/<descricao>`: documentacao.

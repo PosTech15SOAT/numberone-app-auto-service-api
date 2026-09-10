@@ -32,6 +32,7 @@ import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
 import br.com.fiap.numberone.shared.security.infrastructure.authorization.AuthenticatedCustomerAccess;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
+import br.com.fiap.numberone.shared.support.WebMvcControllerTestSupport;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +90,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ServiceOrderExceptionHandler.class,
         GlobalExceptionHandler.class
 })
-class ServiceOrderControllerIT {
+class ServiceOrderControllerIT extends WebMvcControllerTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

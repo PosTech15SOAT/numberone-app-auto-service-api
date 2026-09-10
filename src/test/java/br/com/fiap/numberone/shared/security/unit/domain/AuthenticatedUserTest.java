@@ -24,8 +24,7 @@ class AuthenticatedUserTest {
 			UUID.randomUUID(),
 			" active ",
 			roles,
-			permissions,
-			" correlation-123 "
+			permissions
 		);
 
 		roles.add("CUSTOMER");
@@ -33,7 +32,6 @@ class AuthenticatedUserTest {
 
 		assertEquals("customer-123", user.subject());
 		assertEquals("ACTIVE", user.status());
-		assertEquals("correlation-123", user.correlationId());
 		assertTrue(user.isActive());
 		assertTrue(user.hasRole("admin"));
 		assertTrue(user.hasPermission("service_order_read"));
@@ -47,8 +45,7 @@ class AuthenticatedUserTest {
 			null,
 			"ACTIVE",
 			Set.of(),
-			Set.of(),
-			"correlation-id"
+			Set.of()
 		));
 	}
 
@@ -59,8 +56,7 @@ class AuthenticatedUserTest {
 			null,
 			"ACTIVE",
 			Set.of("ADMIN"),
-			Set.of(),
-			"correlation-id"
+			Set.of()
 		));
 	}
 }

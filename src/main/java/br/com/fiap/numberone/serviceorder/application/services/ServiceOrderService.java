@@ -17,6 +17,7 @@ import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderAverag
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderEstimatedTime;
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderValue;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -25,20 +26,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import static br.com.fiap.numberone.shared.config.utils.MetricNames.SERVICE_ORDER_CREATED;
+import static br.com.fiap.numberone.shared.config.utils.MetricNames.SERVICE_ORDER_STAGE_DURATION;
+
 public class ServiceOrderService {
+
+    private static final String STAGE_EXECUTION = "execucao";
+    private static final String STAGE_FINALIZATION = "finalizacao";
 
     private final ServiceOrderGateway serviceOrderGateway;
     private final CustomerGateway customerGateway;
     private final VehicleGateway vehicleGateway;
+    private final MetricsGateway metricsGateway;
 
     public ServiceOrderService(
             ServiceOrderGateway serviceOrderGateway,
             CustomerGateway customerGateway,
-            VehicleGateway vehicleGateway
+            VehicleGateway vehicleGateway,
+            MetricsGateway metricsGateway
     ) {
         this.serviceOrderGateway = serviceOrderGateway;
         this.customerGateway = customerGateway;
         this.vehicleGateway = vehicleGateway;
+        this.metricsGateway = metricsGateway;
     }
 
     public List<ServiceOrder> getServiceOrders() {
@@ -48,21 +58,37 @@ public class ServiceOrderService {
     public ServiceOrder createServiceOrder(ServiceOrder serviceOrder) {
         Customer validatedCustomer = customerGateway.findById(serviceOrder.getCustomer().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
         Vehicle validatedVehicle = vehicleGateway.findById(serviceOrder.getVehicle().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
 
         serviceOrder.attachCustomer(validatedCustomer);
         serviceOrder.attachVehicle(validatedVehicle);
 
-        return serviceOrderGateway.save(serviceOrder);
+        ServiceOrder createdServiceOrder = serviceOrderGateway.save(serviceOrder);
+
+        metricsGateway.incrementCounter(
+                SERVICE_ORDER_CREATED
+        );
+
+        return createdServiceOrder;
     }
 
     public ServiceOrder addFinalDiagnosis(UUID id, Diagnosis diagnosis) {
         ServiceOrder serviceOrder = getServiceOrder(id);
 
-        serviceOrder.applyFinalDiagnosis(diagnosis.getFinalDiagnosisDescription(), diagnosis.getNotes());
-        serviceOrder.defineExpectedDateTime(diagnosis.getExpectedDateTime());
-        serviceOrder.updateStatus(ServiceOrderStatus.IN_DIAGNOSIS);
+        serviceOrder.applyFinalDiagnosis(
+                diagnosis.getFinalDiagnosisDescription(),
+                diagnosis.getNotes()
+        );
+
+        serviceOrder.defineExpectedDateTime(
+                diagnosis.getExpectedDateTime()
+        );
+
+        serviceOrder.updateStatus(
+                ServiceOrderStatus.IN_DIAGNOSIS
+        );
 
         return serviceOrderGateway.updateFinalDiagnosis(
                 ServiceOrderFinalDiagnosisUpdate.builder()
@@ -78,22 +104,45 @@ public class ServiceOrderService {
     public ServiceOrder startOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
 
-        return changeOrderStatus(serviceOrder, ServiceOrderStatus.IN_PROGRESS);
+        return changeOrderStatus(
+                serviceOrder,
+                ServiceOrderStatus.IN_PROGRESS
+        );
     }
 
     public ServiceOrder cancelOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
 
-        return changeOrderStatus(serviceOrder, ServiceOrderStatus.CANCELLED);
+        return changeOrderStatus(
+                serviceOrder,
+                ServiceOrderStatus.CANCELLED
+        );
     }
 
     public ServiceOrder completeOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
 
         serviceOrder.validateServiceItemsAreFinished();
-        return changeOrderStatus(serviceOrder, ServiceOrderStatus.COMPLETED);
-    }
 
+        LocalDateTime transitionDateTime = LocalDateTime.now();
+
+        Duration executionDuration = calculateDuration(
+                serviceOrder.getUpdatedAt(),
+                transitionDateTime
+        );
+
+        ServiceOrder updatedServiceOrder = changeOrderStatus(
+                serviceOrder,
+                ServiceOrderStatus.COMPLETED
+        );
+
+        recordStageDuration(
+                STAGE_EXECUTION,
+                executionDuration
+        );
+
+        return updatedServiceOrder;
+    }
 
     public ServiceOrder deliverOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
@@ -102,15 +151,31 @@ public class ServiceOrderService {
             serviceOrder.validateServiceItemsAreFinished();
         }
 
-        serviceOrder.updateStatus(ServiceOrderStatus.DELIVERED);
+        LocalDateTime deliveryDateTime = LocalDateTime.now();
 
-        return serviceOrderGateway.deliver(
+        Duration finalizationDuration = calculateDuration(
+                serviceOrder.getUpdatedAt(),
+                deliveryDateTime
+        );
+
+        serviceOrder.updateStatus(
+                ServiceOrderStatus.DELIVERED
+        );
+
+        ServiceOrder deliveredServiceOrder = serviceOrderGateway.deliver(
                 ServiceOrderDeliveryUpdate.builder()
                         .serviceOrderId(serviceOrder.getId())
-                        .deliveryDateTime(LocalDateTime.now())
+                        .deliveryDateTime(deliveryDateTime)
                         .status(serviceOrder.getStatus())
                         .build()
         );
+
+        recordStageDuration(
+                STAGE_FINALIZATION,
+                finalizationDuration
+        );
+
+        return deliveredServiceOrder;
     }
 
     public ServiceOrderValue calculateServices(UUID id) {
@@ -129,7 +194,9 @@ public class ServiceOrderService {
 
         int totalEstimatedMinutes = serviceOrder.getServiceItems()
                 .stream()
-                .filter(serviceOrderItem -> serviceOrderItem.getStatus() != OrderItemStatus.CANCELLED)
+                .filter(serviceOrderItem ->
+                        serviceOrderItem.getStatus() != OrderItemStatus.CANCELLED
+                )
                 .map(ServiceOrderItem::getAutomotiveService)
                 .filter(Objects::nonNull)
                 .map(AutomotiveService::getEstimatedTimeMinutes)
@@ -139,7 +206,9 @@ public class ServiceOrderService {
         return ServiceOrderEstimatedTime.builder()
                 .serviceOrderId(id)
                 .totalEstimatedMinutes(totalEstimatedMinutes)
-                .suggestedExpectedDateTime(LocalDateTime.now().plusMinutes(totalEstimatedMinutes))
+                .suggestedExpectedDateTime(
+                        LocalDateTime.now().plusMinutes(totalEstimatedMinutes)
+                )
                 .build();
     }
 
@@ -148,16 +217,45 @@ public class ServiceOrderService {
 
         List<ServiceOrderItem> items = serviceOrder.getServiceItems();
 
-        int completedServices = countServicesByStatus(items, OrderItemStatus.COMPLETED);
-        int pendingServices = countServicesByStatus(items, OrderItemStatus.PENDING);
-        int inProgressServices = countServicesByStatus(items, OrderItemStatus.IN_PROGRESS);
-        int cancelledServices = countServicesByStatus(items, OrderItemStatus.CANCELLED);
-        int waitingServices = countServicesByStatus(items, OrderItemStatus.WAITING_FOR_PARTS_AND_SUPPLIES);
+        int completedServices = countServicesByStatus(
+                items,
+                OrderItemStatus.COMPLETED
+        );
+
+        int pendingServices = countServicesByStatus(
+                items,
+                OrderItemStatus.PENDING
+        );
+
+        int inProgressServices = countServicesByStatus(
+                items,
+                OrderItemStatus.IN_PROGRESS
+        );
+
+        int cancelledServices = countServicesByStatus(
+                items,
+                OrderItemStatus.CANCELLED
+        );
+
+        int waitingServices = countServicesByStatus(
+                items,
+                OrderItemStatus.WAITING_FOR_PARTS_AND_SUPPLIES
+        );
 
         long averageExecutionMinutes = (long) items.stream()
-                .filter(item -> item.getStatus() == OrderItemStatus.COMPLETED)
-                .filter(item -> item.getStartDateTime() != null && item.getEndDateTime() != null)
-                .mapToLong(item -> Duration.between(item.getStartDateTime(), item.getEndDateTime()).toMinutes())
+                .filter(item ->
+                        item.getStatus() == OrderItemStatus.COMPLETED
+                )
+                .filter(item ->
+                        item.getStartDateTime() != null
+                                && item.getEndDateTime() != null
+                )
+                .mapToLong(item ->
+                        Duration.between(
+                                item.getStartDateTime(),
+                                item.getEndDateTime()
+                        ).toMinutes()
+                )
                 .average()
                 .orElse(0);
 
@@ -172,21 +270,62 @@ public class ServiceOrderService {
                 .build();
     }
 
-    private static int countServicesByStatus(List<ServiceOrderItem> items, OrderItemStatus completed) {
+    private static int countServicesByStatus(
+            List<ServiceOrderItem> items,
+            OrderItemStatus status
+    ) {
         return (int) items.stream()
-                .filter(item -> item.getStatus() == completed)
+                .filter(item -> item.getStatus() == status)
                 .count();
     }
 
-
     public ServiceOrder getServiceOrder(UUID id) {
         return serviceOrderGateway.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Service order not found for id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Service order not found for id: " + id
+                        )
+                );
     }
 
-    private ServiceOrder changeOrderStatus(ServiceOrder serviceOrder, ServiceOrderStatus targetStatus) {
+    private ServiceOrder changeOrderStatus(
+            ServiceOrder serviceOrder,
+            ServiceOrderStatus targetStatus
+    ) {
         serviceOrder.updateStatus(targetStatus);
-        return serviceOrderGateway.updateStatus(serviceOrder.getId(), serviceOrder.getStatus());
+
+        return serviceOrderGateway.updateStatus(
+                serviceOrder.getId(),
+                serviceOrder.getStatus()
+        );
     }
 
+    private Duration calculateDuration(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime
+    ) {
+        if (startDateTime == null || endDateTime == null) {
+            return null;
+        }
+
+        return Duration.between(
+                startDateTime,
+                endDateTime
+        );
+    }
+
+    private void recordStageDuration(
+            String stage,
+            Duration duration
+    ) {
+        if (duration == null || duration.isNegative()) {
+            return;
+        }
+
+        metricsGateway.recordTimer(
+                SERVICE_ORDER_STAGE_DURATION,
+                duration,
+                "stage", stage
+        );
+    }
 }

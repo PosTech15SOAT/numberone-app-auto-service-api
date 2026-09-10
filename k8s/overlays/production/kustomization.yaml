@@ -11,7 +11,7 @@ labels:
   - pairs:
       environment: production
       tags.datadoghq.com/env: production
-      tags.datadoghq.com/service: numberone-auto-service-api
+      tags.datadoghq.com/service: numberone-auto-service
     includeSelectors: false
     includeTemplates: true
 

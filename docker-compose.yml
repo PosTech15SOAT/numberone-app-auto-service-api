@@ -45,8 +45,35 @@ services:
       MAIL_PORT: 1025
       APP_MAIL_FROM: no-reply@numberone.local
       SERVICE_ORDER_APPROVAL_BASE_URL: http://localhost:8080
+      DD_SERVICE: numberone-auto-service
+      DD_ENV: local
+      DD_VERSION: 0.0.1-SNAPSHOT
+      DD_AGENT_HOST: datadog-agent
+      DD_TRACE_AGENT_PORT: 8126
     ports:
       - "8080:8080"
+
+  datadog-agent:
+    image: registry.datadoghq.com/agent:7
+    container_name: numberone-datadog-agent
+    environment:
+      DD_API_KEY: ${DD_API_KEY:?DD_API_KEY is required}
+      DD_SITE: datadoghq.com
+      DD_ENV: local
+
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
 
 volumes:
   postgres_data:

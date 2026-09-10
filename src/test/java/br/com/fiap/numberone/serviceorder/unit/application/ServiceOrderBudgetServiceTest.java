@@ -13,6 +13,7 @@ import br.com.fiap.numberone.serviceorder.domain.enums.ServiceOrderStatus;
 import br.com.fiap.numberone.serviceorder.domain.exceptions.CustomerEmailException;
 import br.com.fiap.numberone.serviceorder.domain.exceptions.InvalidServiceOrderBudgetStatusException;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,11 +52,14 @@ class ServiceOrderBudgetServiceTest {
     @Mock
     private ServiceOrderBudgetApprovalNotificationGateway notificationGateway;
 
+    @Mock
+    private MetricsGateway metricsGateway;
+
     private ServiceOrderBudgetService service;
 
     @BeforeEach
     void setUp() {
-        service = new ServiceOrderBudgetService(serviceOrderGateway, serviceOrderBudgetGateway, notificationGateway);
+        service = new ServiceOrderBudgetService(serviceOrderGateway, serviceOrderBudgetGateway, notificationGateway, metricsGateway);
     }
 
     @Test

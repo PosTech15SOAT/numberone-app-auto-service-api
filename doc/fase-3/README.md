@@ -17,4 +17,4 @@ Evoluir a aplicacao legada para executar em Kubernetes, atras do API Gateway, co
 1. Estrutura, CI e contratos definidos.
 2. Aplicacao funcionando isoladamente com provider local de identidade.
 3. Integracao com API Gateway e Lambda Authorizer.
-4. Observabilidade, homologacao e evidencias da entrega.
+4. Observabilidade e evidencias da entrega.

@@ -10,6 +10,7 @@ import br.com.fiap.numberone.customer.domain.exceptions.CustomerDocumentExceptio
 import br.com.fiap.numberone.customer.domain.exceptions.CustomerNotFoundException;
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
+import br.com.fiap.numberone.shared.support.WebMvcControllerTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -42,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         CustomerExceptionHandler.class,
         GlobalExceptionHandler.class
 })
-class CustomerControllerIT {
+class CustomerControllerIT extends WebMvcControllerTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -228,4 +229,3 @@ class CustomerControllerIT {
                 .build();
     }
 }
-

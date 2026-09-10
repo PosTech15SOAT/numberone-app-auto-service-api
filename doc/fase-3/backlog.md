@@ -31,7 +31,7 @@
 
 - [ ] Executar a imagem como usuario sem privilegios.
 - [ ] Publicar a imagem no registry definido pela infraestrutura.
-- [ ] Automatizar deploy de homologacao e producao.
+- [ ] Automatizar deploy de producao.
 - [ ] Atualizar OpenAPI para o fluxo de autenticacao externo.
 - [ ] Atualizar o README com URLs e instrucoes de deploy.
 - [ ] Criar diagrama especifico deste repositorio.

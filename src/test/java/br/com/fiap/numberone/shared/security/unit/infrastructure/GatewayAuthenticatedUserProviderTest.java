@@ -34,7 +34,6 @@ class GatewayAuthenticatedUserProviderTest {
 		assertTrue(user.hasRole("CUSTOMER"));
 		assertTrue(user.hasPermission("SERVICE_ORDER_READ"));
 		assertTrue(user.hasPermission("SERVICE_ORDER_APPROVE"));
-		assertEquals("correlation-123", user.correlationId());
 	}
 
 	@Test
@@ -62,6 +61,17 @@ class GatewayAuthenticatedUserProviderTest {
 	void shouldRejectPartialIdentityContext() {
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		request.addHeader("X-Authenticated-Subject", "customer-subject");
+
+		assertThrows(
+			InvalidAuthenticatedUserContextException.class,
+			() -> new GatewayAuthenticatedUserProvider(request, properties).currentUser()
+		);
+	}
+
+	@Test
+	void shouldRejectBlankSubjectWhenIdentityHeaderIsPresent() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addHeader("X-Authenticated-Subject", " ");
 
 		assertThrows(
 			InvalidAuthenticatedUserContextException.class,
@@ -102,7 +112,6 @@ class GatewayAuthenticatedUserProviderTest {
 		request.addHeader("X-Authenticated-Status", "ACTIVE");
 		request.addHeader("X-Authenticated-Roles", "CUSTOMER");
 		request.addHeader("X-Authenticated-Permissions", "SERVICE_ORDER_READ, SERVICE_ORDER_APPROVE");
-		request.addHeader("X-Correlation-Id", "correlation-123");
 		return request;
 	}
 }

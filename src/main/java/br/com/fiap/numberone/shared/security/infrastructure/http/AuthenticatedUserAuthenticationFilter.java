@@ -7,8 +7,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,16 +26,13 @@ public class AuthenticatedUserAuthenticationFilter extends OncePerRequestFilter 
 
 	private final AuthenticatedUserProvider authenticatedUserProvider;
 	private final RestAuthenticationEntryPoint authenticationEntryPoint;
-	private final RestAccessDeniedHandler accessDeniedHandler;
 
 	public AuthenticatedUserAuthenticationFilter(
 		AuthenticatedUserProvider authenticatedUserProvider,
-		RestAuthenticationEntryPoint authenticationEntryPoint,
-		RestAccessDeniedHandler accessDeniedHandler
+		RestAuthenticationEntryPoint authenticationEntryPoint
 	) {
 		this.authenticatedUserProvider = authenticatedUserProvider;
 		this.authenticationEntryPoint = authenticationEntryPoint;
-		this.accessDeniedHandler = accessDeniedHandler;
 	}
 
 	@Override
@@ -59,7 +56,7 @@ public class AuthenticatedUserAuthenticationFilter extends OncePerRequestFilter 
 			);
 			return;
 		} catch (InactiveAuthenticatedUserException exception) {
-			accessDeniedHandler.handle(request, response, exception);
+			authenticationEntryPoint.commence(request, response, exception);
 			return;
 		}
 
@@ -89,7 +86,7 @@ public class AuthenticatedUserAuthenticationFilter extends OncePerRequestFilter 
 		return authorities.stream().map(SimpleGrantedAuthority::new).toList();
 	}
 
-	private static class InactiveAuthenticatedUserException extends AccessDeniedException {
+	private static class InactiveAuthenticatedUserException extends DisabledException {
 		private InactiveAuthenticatedUserException() {
 			super("Authenticated user is not active");
 		}

@@ -21,6 +21,7 @@ import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderAverag
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderEstimatedTime;
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderValue;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,11 +63,14 @@ class ServiceOrderServiceTest {
     @Mock
     private VehicleGateway vehicleGateway;
 
+    @Mock
+    private MetricsGateway metricsGateway;
+
     private ServiceOrderService service;
 
     @BeforeEach
     void setUp() {
-        service = new ServiceOrderService(serviceOrderGateway, customerGateway, vehicleGateway);
+        service = new ServiceOrderService(serviceOrderGateway, customerGateway, vehicleGateway, metricsGateway);
     }
 
     @Test

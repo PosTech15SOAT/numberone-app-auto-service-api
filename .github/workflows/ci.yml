@@ -53,10 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p rendered-manifests
-          for environment in homolog production; do
-            kubectl kustomize "k8s/overlays/${environment}" \
-              > "rendered-manifests/${environment}.yaml"
-          done
+          kubectl kustomize k8s/overlays/production \
+            > rendered-manifests/production.yaml
 
           docker run --rm \
             --volume "$PWD:/workspace" \
