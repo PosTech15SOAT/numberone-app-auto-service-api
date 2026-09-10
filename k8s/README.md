@@ -1,7 +1,7 @@
 # Kubernetes da API
 
 Os manifests da aplicacao usam Kustomize para compartilhar a configuracao
-comum e isolar homologacao e producao no mesmo cluster EKS.
+comum e manter o runtime de producao no EKS.
 
 ## Estrutura
 
@@ -16,7 +16,6 @@ k8s/
 |   |-- serviceaccount.yaml
 |   `-- kustomization.yaml
 `-- overlays/
-    |-- homolog/
     `-- production/
 ```
 
@@ -27,7 +26,8 @@ de autenticacao. Este repositorio administra apenas a aplicacao principal.
 ## Recursos
 
 - Deployment com duas replicas e rolling update sem indisponibilidade;
-- probes de startup, readiness e liveness em `/api/public/health`;
+- probes de startup e liveness em `/actuator/health/liveness`;
+- probe de readiness em `/actuator/health/readiness`;
 - requests e limits de CPU/memoria;
 - afinidade preferencial para distribuir pods entre nodes;
 - Service `LoadBalancer` com NLB interno, sem acesso publico direto;
@@ -37,24 +37,30 @@ de autenticacao. Este repositorio administra apenas a aplicacao principal.
 - labels de ambiente e observabilidade.
 
 O HPA exige o Metrics Server no cluster. A instalacao desse componente e do
-agente Datadog/New Relic deve ser tratada como add-on compartilhado no
-repositorio de infraestrutura cloud.
+Datadog Agent deve ser tratada como add-on compartilhado no repositorio
+`postech15soat-infra-cloud`.
+
+O Datadog Agent nao e instalado por este repositorio. Em producao, a aplicacao
+usa o DaemonSet compartilhado do cluster: `DD_AGENT_HOST` e preenchido com
+`status.hostIP`, `DD_TRACE_AGENT_PORT=8126` envia traces APM para o Agent do
+node e `DD_DOGSTATSD_PORT=8125` permite que as metricas Micrometer StatsD sejam
+emitidas via DogStatsD. Os logs JSON continuam indo para stdout e sao coletados
+pelo Agent do cluster.
 
 ## Validacao local
 
 Com `kubectl` instalado:
 
 ```bash
-kubectl kustomize k8s/overlays/homolog
 kubectl kustomize k8s/overlays/production
 ```
 
 Validacao de schema sem cluster, usando Kubeconform:
 
 ```bash
-kubectl kustomize k8s/overlays/homolog > homolog.yaml
+kubectl kustomize k8s/overlays/production > production.yaml
 docker run --rm -v "$PWD:/workspace" ghcr.io/yannh/kubeconform:v0.8.0 \
-  -strict -summary -kubernetes-version 1.36.0 /workspace/homolog.yaml
+  -strict -summary -kubernetes-version 1.36.0 /workspace/production.yaml
 ```
 
 ## Fluxo de deploy
@@ -67,18 +73,20 @@ O workflow `.github/workflows/deploy.yml` executa:
 4. push da imagem com tag igual ao SHA do commit;
 5. configuracao do acesso ao EKS;
 6. criacao idempotente de ConfigMap e Secret de runtime;
-7. aplicacao do overlay correspondente a branch;
-8. espera pelo rollout, provisionamento do NLB interno e smoke test do health endpoint.
+7. aplicacao do overlay de producao;
+8. espera pelo rollout, provisionamento do NLB interno e smoke test em
+   `/actuator/health/readiness`.
 
 | Branch | GitHub environment | Namespace |
 | --- | --- | --- |
-| `develop` | `homolog` | `numberone-homolog` |
 | `main` | `production` | `numberone-production` |
 
-## Configuracao dos GitHub environments
+`develop` e uma branch de CI e validacoes. Ela nao representa ambiente de
+runtime e nao executa deploy Kubernetes neste repositorio.
 
-Configure os mesmos nomes em `homolog` e `production`, alterando os valores
-quando os ambientes tiverem dependencias diferentes.
+## Configuracao do GitHub environment
+
+Configure o environment `production` com as variaveis e secrets abaixo.
 
 ### Secrets
 
@@ -124,6 +132,5 @@ atualizadas antes de executar novamente o deploy.
   pelo cliente antes de encaminhar a requisicao.
 
 O caminho de entrada e `API Gateway -> VPC Link -> NLB interno -> Service -> Pods`.
-Os overlays reservam `30080` para homologacao e `30081` para producao; essas
-portas devem permanecer alinhadas com as regras declaradas no repositorio
-`postech15soat-infra-cloud`.
+O overlay de producao reserva o NodePort `30081`; essa porta deve permanecer
+alinhada com as regras declaradas no repositorio `postech15soat-infra-cloud`.

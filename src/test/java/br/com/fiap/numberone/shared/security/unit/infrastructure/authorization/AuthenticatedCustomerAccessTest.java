@@ -32,7 +32,7 @@ class AuthenticatedCustomerAccessTest {
 	@Test
 	void shouldAllowAdminWithoutCustomerId() {
 		AuthenticatedUser admin = new AuthenticatedUser(
-			"admin-subject", null, "ACTIVE", Set.of("ADMIN"), Set.of(), "correlation-id");
+			"admin-subject", null, "ACTIVE", Set.of("ADMIN"), Set.of());
 
 		assertThatCode(() -> access.requireOwnershipOrAdmin(admin, UUID.randomUUID()))
 			.doesNotThrowAnyException();
@@ -40,6 +40,6 @@ class AuthenticatedCustomerAccessTest {
 
 	private AuthenticatedUser customer(UUID customerId) {
 		return new AuthenticatedUser(
-			"customer-subject", customerId, "ACTIVE", Set.of("CUSTOMER"), Set.of(), "correlation-id");
+			"customer-subject", customerId, "ACTIVE", Set.of("CUSTOMER"), Set.of());
 	}
 }

@@ -9,6 +9,7 @@ import br.com.fiap.numberone.inventory.domain.exceptions.InventoryItemBusinessEx
 import br.com.fiap.numberone.inventory.domain.exceptions.InventoryItemNotFoundException;
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
+import br.com.fiap.numberone.shared.support.WebMvcControllerTestSupport;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         InventoryItemExceptionHandler.class,
         GlobalExceptionHandler.class
 })
-class InventoryItemControllerIT {
+class InventoryItemControllerIT extends WebMvcControllerTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

@@ -32,6 +32,7 @@ import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositorie
 import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositories.ServiceOrderItemRepository;
 import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositories.ServiceOrderItemSupplyRepository;
 import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositories.ServiceOrderRepository;
+import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -73,12 +74,14 @@ public class ServiceOrderBeansConfig {
     public ServiceOrderService serviceOrderService(
             ServiceOrderGateway serviceOrderGateway,
             CustomerGateway customerGateway,
-            VehicleGateway vehicleGateway
+            VehicleGateway vehicleGateway,
+            MetricsGateway metricsGateway
     ) {
         return new ServiceOrderService(
                 serviceOrderGateway,
                 customerGateway,
-                vehicleGateway
+                vehicleGateway,
+                metricsGateway
         );
     }
 
@@ -106,12 +109,14 @@ public class ServiceOrderBeansConfig {
     public ServiceOrderBudgetService serviceOrderBudgetService(
             ServiceOrderGateway serviceOrderGateway,
             ServiceOrderBudgetGateway serviceOrderBudgetGateway,
-            ServiceOrderBudgetApprovalNotificationGateway serviceOrderBudgetApprovalNotificationGateway
+            ServiceOrderBudgetApprovalNotificationGateway serviceOrderBudgetApprovalNotificationGateway,
+            MetricsGateway metricsGateway
     ) {
         return new ServiceOrderBudgetService(
                 serviceOrderGateway,
                 serviceOrderBudgetGateway,
-                serviceOrderBudgetApprovalNotificationGateway
+                serviceOrderBudgetApprovalNotificationGateway,
+                metricsGateway
         );
     }
 

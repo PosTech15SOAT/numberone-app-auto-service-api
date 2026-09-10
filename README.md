@@ -135,6 +135,20 @@ Com o profile `local`, o Swagger usa automaticamente a identidade local configur
 Publicos:
 
 - `GET /api/public/health`
+- `GET /actuator/health`
+- `GET /actuator/health/liveness`
+- `GET /actuator/health/readiness`
+
+## Correlacao de requisicoes
+
+A API exige `X-Correlation-Id` em todas as requisicoes HTTP. O consumidor deve
+enviar um valor nao vazio, por exemplo `X-Correlation-Id: teste-julio-os-001`.
+Endpoints do Actuator nao exigem esse header.
+
+O valor resolvido fica disponivel durante a requisicao em `MDC` como
+`correlation_id` e aparece nos logs estruturados. A API nao gera nem devolve esse
+header na resposta. Campos de tracing do Datadog, como `dd.trace_id` e
+`dd.span_id`, permanecem independentes.
 
 Autenticados como cliente proprietario ou administrador:
 
@@ -175,22 +189,27 @@ O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas 
 
 ## Deploy no Kubernetes
 
-Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlays separados:
+Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlay
+de producao:
 
-- `develop` publica a imagem no ECR e faz deploy em `numberone-homolog`;
-- `main` publica a imagem no ECR e faz deploy em `numberone-production`.
+- `develop` executa CI e validacoes, mas nao representa ambiente de runtime e
+  nao faz deploy Kubernetes;
+- `main` publica a imagem no ECR e faz o unico deploy em `numberone-production`,
+  usando o GitHub Environment `production`.
 
 Cada imagem recebe como tag o SHA completo do commit. O pipeline aplica o
 Deployment, NLB interno, HPA e PodDisruptionBudget, aguarda o rollout e executa
-um smoke test em `/api/public/health`.
+um smoke test em `/actuator/health/readiness`.
 
 O Service e do tipo `LoadBalancer`, mas usa um NLB interno nas subnets privadas.
 A entrada externa ocorre exclusivamente pelo caminho `API Gateway -> VPC Link
 -> NLB`, impedindo que clientes contornem o Authorizer.
 
-O deploy requer que o RDS esteja provisionado e que os environments `homolog`
-e `production` possuam as variaveis e secrets descritos em
-[`k8s/README.md`](k8s/README.md).
+O deploy requer que o RDS esteja provisionado e que o environment `production`
+possua as variaveis e secrets descritos em [`k8s/README.md`](k8s/README.md).
+O Metrics Server e o Datadog Agent compartilhado do EKS pertencem ao repositorio
+`postech15soat-infra-cloud`; este repositorio nao instala sidecar Datadog nem
+Helm chart.
 
 ## Testes
 

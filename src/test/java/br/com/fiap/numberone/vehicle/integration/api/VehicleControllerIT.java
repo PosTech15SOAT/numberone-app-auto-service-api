@@ -2,6 +2,7 @@ package br.com.fiap.numberone.vehicle.integration.api;
 
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
+import br.com.fiap.numberone.shared.support.WebMvcControllerTestSupport;
 import br.com.fiap.numberone.vehicle.api.controllers.VehicleController;
 import br.com.fiap.numberone.vehicle.api.exceptions.VehicleExceptionHandler;
 import br.com.fiap.numberone.vehicle.api.mappers.VehicleApiMapper;
@@ -42,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         VehicleExceptionHandler.class,
         GlobalExceptionHandler.class
 })
-class VehicleControllerIT {
+class VehicleControllerIT extends WebMvcControllerTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

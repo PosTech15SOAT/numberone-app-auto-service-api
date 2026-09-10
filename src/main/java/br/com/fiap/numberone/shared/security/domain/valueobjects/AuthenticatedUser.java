@@ -11,8 +11,7 @@ public record AuthenticatedUser(
 	UUID customerId,
 	String status,
 	Set<String> roles,
-	Set<String> permissions,
-	String correlationId
+	Set<String> permissions
 ) {
 
 	public AuthenticatedUser {
@@ -20,7 +19,6 @@ public record AuthenticatedUser(
 		status = requireNonBlank(status, "status").toUpperCase(Locale.ROOT);
 		roles = normalizeAuthorities(roles, "roles");
 		permissions = normalizeAuthorities(permissions, "permissions");
-		correlationId = requireNonBlank(correlationId, "correlationId");
 
 		if (roles.isEmpty()) {
 			throw new IllegalArgumentException("roles must contain at least one value");

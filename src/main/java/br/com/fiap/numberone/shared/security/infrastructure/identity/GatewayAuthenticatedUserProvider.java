@@ -36,18 +36,14 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 		HttpServletRequest request,
 		AuthenticatedUserProperties.Headers headers
 	) {
-		String subject = request.getHeader(headers.getSubject());
-		if (subject == null || subject.isBlank()) {
-			if (hasAnyIdentityHeader(request, headers)) {
-				throw new InvalidAuthenticatedUserContextException("Identity context is incomplete");
-			}
+		if (!hasAnyIdentityHeader(request, headers)) {
 			return Optional.empty();
 		}
 
+		String subject = requiredHeader(request, headers.getSubject());
 		String status = requiredHeader(request, headers.getStatus());
 		String roles = requiredHeader(request, headers.getRoles());
 		String permissions = requiredHeaderAllowingEmpty(request, headers.getPermissions());
-		String correlationId = requiredHeader(request, headers.getCorrelationId());
 		UUID customerId = parseCustomerId(request.getHeader(headers.getCustomerId()), headers.getCustomerId());
 
 		try {
@@ -56,8 +52,7 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 				customerId,
 				status,
 				parseAuthorities(roles),
-				parseAuthorities(permissions),
-				correlationId
+				parseAuthorities(permissions)
 			));
 		} catch (IllegalArgumentException exception) {
 			throw new InvalidAuthenticatedUserContextException("Invalid authenticated user context", exception);
@@ -65,7 +60,8 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 	}
 
 	private boolean hasAnyIdentityHeader(HttpServletRequest request, AuthenticatedUserProperties.Headers headers) {
-		return request.getHeader(headers.getCustomerId()) != null
+		return request.getHeader(headers.getSubject()) != null
+			|| request.getHeader(headers.getCustomerId()) != null
 			|| request.getHeader(headers.getStatus()) != null
 			|| request.getHeader(headers.getRoles()) != null
 			|| request.getHeader(headers.getPermissions()) != null;

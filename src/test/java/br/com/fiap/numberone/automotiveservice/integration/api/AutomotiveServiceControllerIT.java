@@ -9,6 +9,7 @@ import br.com.fiap.numberone.automotiveservice.domain.exceptions.AutoServiceNotF
 import br.com.fiap.numberone.automotiveservice.domain.exceptions.AutomotiveServiceBusinessException;
 import br.com.fiap.numberone.shared.api.exception.GlobalExceptionHandler;
 import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedUserProvider;
+import br.com.fiap.numberone.shared.support.WebMvcControllerTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -44,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         AutomotiveServiceExceptionHandler.class,
         GlobalExceptionHandler.class
 })
-class AutomotiveServiceControllerIT {
+class AutomotiveServiceControllerIT extends WebMvcControllerTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

@@ -20,6 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class AutomotiveServiceSteps {
 
+    private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    private static final String CORRELATION_ID = "automotive-service-e2e";
+
     @LocalServerPort
     private int port;
 
@@ -59,6 +62,7 @@ public class AutomotiveServiceSteps {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/admin/servicos"))
                 .header("Content-Type", "application/json")
+                .header(CORRELATION_ID_HEADER, CORRELATION_ID)
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
                 .build();
 
@@ -88,6 +92,7 @@ public class AutomotiveServiceSteps {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/admin/servicos/" + createdServiceId))
                 .header("Accept", "application/json")
+                .header(CORRELATION_ID_HEADER, CORRELATION_ID)
                 .GET()
                 .build();
 
