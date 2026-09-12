@@ -185,7 +185,23 @@ As migrations ficam em:
 src/main/resources/db/migrations
 ```
 
-O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas no PostgreSQL.
+O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas no PostgreSQL. Para a entrega atual, esta API continua responsavel por executar as migrations do banco compartilhado pela aplicacao principal e pelo Auth. Essa estrategia e pragmatica para manter um banco vazio funcional apenas com o startup da API/Flyway, sem centralizar as migrations no repositorio de database nesta etapa.
+
+Ordem atual:
+
+- `V1__create_initial_schema.sql`: schema principal da oficina.
+- `V2__create_auth_rbac.sql`: tabelas de Auth/RBAC usadas pelo login por CPF e pelo JWT.
+- `V3__seed_default_roles_permissions.sql`: perfis e permissoes padrao herdados do Auth.
+- `V4__align_application_authorization_contract.sql`: alinhamento do perfil `CUSTOMER` e permissoes esperadas pela API.
+- `V5__seed_academic_demo_data.sql`: massa academica minima para demonstracao integrada.
+
+O ambiente academico possui dados deterministicos de demonstracao. CPF conhecido para teste no `POST /auth/login`:
+
+```text
+52998224725
+```
+
+Nao ha senha para esse fluxo; o login atual usa apenas CPF. O cliente demo fica ativo, possui `auth_usuario`, perfil `CUSTOMER`, permissoes de acompanhamento/aprovacao proprias, veiculo, servico, item de estoque, movimentacao, ordem de servico, orcamento e item de ordem para testes basicos do dominio da oficina.
 
 ## Deploy no Kubernetes
 
