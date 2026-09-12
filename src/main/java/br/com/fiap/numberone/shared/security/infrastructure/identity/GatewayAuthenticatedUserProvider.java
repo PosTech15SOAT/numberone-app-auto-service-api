@@ -38,19 +38,21 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 		HttpServletRequest request,
 		AuthenticatedUserProperties.Headers headers
 	) {
-		log.info(
-			"Received gateway authenticated user headers: {}='{}', {}='{}', {}='{}', {}='{}', {}='{}'",
-			headers.getSubject(),
-			request.getHeader(headers.getSubject()),
-			headers.getCustomerId(),
-			request.getHeader(headers.getCustomerId()),
-			headers.getStatus(),
-			request.getHeader(headers.getStatus()),
-			headers.getRoles(),
-			request.getHeader(headers.getRoles()),
-			headers.getPermissions(),
-			request.getHeader(headers.getPermissions())
-		);
+		if (isApplicationApiRequest(request)) {
+			log.info(
+				"Received gateway authenticated user headers: {}='{}', {}='{}', {}='{}', {}='{}', {}='{}'",
+				headers.getSubject(),
+				request.getHeader(headers.getSubject()),
+				headers.getCustomerId(),
+				request.getHeader(headers.getCustomerId()),
+				headers.getStatus(),
+				request.getHeader(headers.getStatus()),
+				headers.getRoles(),
+				request.getHeader(headers.getRoles()),
+				headers.getPermissions(),
+				request.getHeader(headers.getPermissions())
+			);
+		}
 
 		if (!hasAnyIdentityHeader(request, headers)) {
 			return Optional.empty();
@@ -81,6 +83,10 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 			|| request.getHeader(headers.getStatus()) != null
 			|| request.getHeader(headers.getRoles()) != null
 			|| request.getHeader(headers.getPermissions()) != null;
+	}
+
+	private boolean isApplicationApiRequest(HttpServletRequest request) {
+		return request.getRequestURI().startsWith("/api/");
 	}
 
 	private String requiredHeader(HttpServletRequest request, String headerName) {

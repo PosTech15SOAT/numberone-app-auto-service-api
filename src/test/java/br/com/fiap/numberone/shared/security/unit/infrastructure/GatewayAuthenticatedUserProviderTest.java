@@ -4,7 +4,11 @@ import br.com.fiap.numberone.shared.security.domain.exceptions.InvalidAuthentica
 import br.com.fiap.numberone.shared.security.domain.valueobjects.AuthenticatedUser;
 import br.com.fiap.numberone.shared.security.infrastructure.identity.AuthenticatedUserProperties;
 import br.com.fiap.numberone.shared.security.infrastructure.identity.GatewayAuthenticatedUserProvider;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Optional;
@@ -103,6 +107,36 @@ class GatewayAuthenticatedUserProviderTest {
 		assertFalse(exception.getMessage().contains("invalid-customer-id"));
 	}
 
+	@Test
+	void shouldLogGatewayHeadersForApplicationApiRequests() {
+		MockHttpServletRequest request = validRequest(UUID.randomUUID().toString());
+		request.setRequestURI("/api/customers");
+
+		ListAppender<ILoggingEvent> appender = captureProviderLogs();
+		try {
+			new GatewayAuthenticatedUserProvider(request, properties).currentUser();
+		} finally {
+			detachProviderLogs(appender);
+		}
+
+		assertTrue(hasGatewayHeadersLog(appender));
+	}
+
+	@Test
+	void shouldNotLogGatewayHeadersForActuatorRequests() {
+		MockHttpServletRequest request = validRequest(UUID.randomUUID().toString());
+		request.setRequestURI("/actuator/health/liveness");
+
+		ListAppender<ILoggingEvent> appender = captureProviderLogs();
+		try {
+			new GatewayAuthenticatedUserProvider(request, properties).currentUser();
+		} finally {
+			detachProviderLogs(appender);
+		}
+
+		assertFalse(hasGatewayHeadersLog(appender));
+	}
+
 	private MockHttpServletRequest validRequest(String customerId) {
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		request.addHeader("X-Authenticated-Subject", "customer-subject");
@@ -113,5 +147,24 @@ class GatewayAuthenticatedUserProviderTest {
 		request.addHeader("X-Authenticated-Roles", "CUSTOMER");
 		request.addHeader("X-Authenticated-Permissions", "SERVICE_ORDER_READ, SERVICE_ORDER_APPROVE");
 		return request;
+	}
+
+	private ListAppender<ILoggingEvent> captureProviderLogs() {
+		Logger logger = (Logger) LoggerFactory.getLogger(GatewayAuthenticatedUserProvider.class);
+		ListAppender<ILoggingEvent> appender = new ListAppender<>();
+		appender.start();
+		logger.addAppender(appender);
+		return appender;
+	}
+
+	private void detachProviderLogs(ListAppender<ILoggingEvent> appender) {
+		Logger logger = (Logger) LoggerFactory.getLogger(GatewayAuthenticatedUserProvider.class);
+		logger.detachAppender(appender);
+	}
+
+	private boolean hasGatewayHeadersLog(ListAppender<ILoggingEvent> appender) {
+		return appender.list.stream()
+			.map(ILoggingEvent::getFormattedMessage)
+			.anyMatch(message -> message.startsWith("Received gateway authenticated user headers"));
 	}
 }

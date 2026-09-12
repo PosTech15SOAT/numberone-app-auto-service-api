@@ -50,6 +50,7 @@ services:
       DD_VERSION: 0.0.1-SNAPSHOT
       DD_AGENT_HOST: datadog-agent
       DD_TRACE_AGENT_PORT: 8126
+      DD_TRACE_SAMPLING_RULES: '[{"resource":"GET /actuator/health.*","sample_rate":0.0}]'
     ports:
       - "8080:8080"
 

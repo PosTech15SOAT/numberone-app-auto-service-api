@@ -64,6 +64,8 @@ spec:
               value: numberone-auto-service
             - name: DD_ENV
               value: production
+            - name: DD_TRACE_SAMPLING_RULES
+              value: '[{"resource":"GET /actuator/health.*","sample_rate":0.0}]'
           resources:
             requests:
               cpu: 250m
