@@ -4,6 +4,7 @@ import br.com.fiap.numberone.shared.security.application.gateways.AuthenticatedU
 import br.com.fiap.numberone.shared.security.domain.exceptions.InvalidAuthenticatedUserContextException;
 import br.com.fiap.numberone.shared.security.domain.valueobjects.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Component
 @RequestScope
 @ConditionalOnProperty(prefix = "app.security.identity", name = "provider", havingValue = "gateway")
+@Slf4j
 public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvider {
 
 	private final HttpServletRequest request;
@@ -36,6 +38,20 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 		HttpServletRequest request,
 		AuthenticatedUserProperties.Headers headers
 	) {
+		log.info(
+			"Received gateway authenticated user headers: {}='{}', {}='{}', {}='{}', {}='{}', {}='{}'",
+			headers.getSubject(),
+			request.getHeader(headers.getSubject()),
+			headers.getCustomerId(),
+			request.getHeader(headers.getCustomerId()),
+			headers.getStatus(),
+			request.getHeader(headers.getStatus()),
+			headers.getRoles(),
+			request.getHeader(headers.getRoles()),
+			headers.getPermissions(),
+			request.getHeader(headers.getPermissions())
+		);
+
 		if (!hasAnyIdentityHeader(request, headers)) {
 			return Optional.empty();
 		}
