@@ -40,7 +40,7 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 	) {
 		if (isApplicationApiRequest(request)) {
 			log.info(
-				"Received gateway authenticated user headers: {}='{}', {}='{}', {}='{}', {}='{}', {}='{}'",
+				"Received gateway authenticated user headers: {}='{}', {}='{}', {}='{}', {}='{}', {}='{}', X-Diag-Static='{}', X-Diag-RequestId='{}', X-Diag-Roles='{}'",
 				headers.getSubject(),
 				request.getHeader(headers.getSubject()),
 				headers.getCustomerId(),
@@ -50,7 +50,10 @@ public class GatewayAuthenticatedUserProvider implements AuthenticatedUserProvid
 				headers.getRoles(),
 				request.getHeader(headers.getRoles()),
 				headers.getPermissions(),
-				request.getHeader(headers.getPermissions())
+				request.getHeader(headers.getPermissions()),
+				request.getHeader("X-Diag-Static"),
+				request.getHeader("X-Diag-RequestId"),
+				request.getHeader("X-Diag-Roles")
 			);
 		}
 
