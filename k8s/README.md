@@ -25,7 +25,8 @@ de autenticacao. Este repositorio administra apenas a aplicacao principal.
 
 ## Recursos
 
-- Deployment com duas replicas e rolling update sem indisponibilidade;
+- Deployment com duas replicas e rolling update configurado para o ambiente
+  academico;
 - probes de startup e liveness em `/actuator/health/liveness`;
 - probe de readiness em `/actuator/health/readiness`;
 - requests e limits de CPU/memoria;
@@ -40,12 +41,30 @@ O HPA exige o Metrics Server no cluster. A instalacao desse componente e do
 Datadog Agent deve ser tratada como add-on compartilhado no repositorio
 `postech15soat-infra-cloud`.
 
+## Decisao de rollout no AWS Academy
+
+O Deployment usa:
+
+```yaml
+maxSurge: 0
+maxUnavailable: 1
+```
+
+Essa configuracao e uma decisao pragmatica do ambiente academico por limitacao
+de memoria/capacidade do cluster AWS Academy. Ela reduz consumo durante rollout,
+mas pode operar temporariamente com uma replica indisponivel. Nao representa
+necessariamente a estrategia ideal de rollout para producao corporativa.
+
 O Datadog Agent nao e instalado por este repositorio. Em producao, a aplicacao
 usa o DaemonSet compartilhado do cluster: `DD_AGENT_HOST` e preenchido com
 `status.hostIP`, `DD_TRACE_AGENT_PORT=8126` envia traces APM para o Agent do
 node e `DD_DOGSTATSD_PORT=8125` permite que as metricas Micrometer StatsD sejam
 emitidas via DogStatsD. Os logs JSON continuam indo para stdout e sao coletados
 pelo Agent do cluster.
+
+Debito tecnico: traces de `/actuator/health/**` podem aparecer no Datadog APM e
+gerar ruido. Esse ajuste deve ser tratado posteriormente na consolidacao da
+observabilidade integrada.
 
 ## Validacao local
 
