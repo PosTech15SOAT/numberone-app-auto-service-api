@@ -1,39 +1,46 @@
-# Backlog tecnico
+# Backlog tecnico da Fase 3
 
-## P0 - Fundacao e seguranca
+Este arquivo registra o estado tecnico do repositorio da aplicacao principal no
+fechamento da Fase 3. Itens concluidos abaixo refletem a implementacao atual; os
+itens pendentes sao debitos ou consolidacoes documentais.
 
-- [x] Criar o repositorio da aplicacao principal.
-- [x] Migrar o codigo legado preservando o historico Git.
-- [x] Adicionar CI inicial para testes e build da imagem.
-- [ ] Configurar protecao de `main` e `develop` no GitHub.
-- [ ] Adicionar os integrantes e o usuario `soat-architecture`.
-- [ ] Validar com Marcelo o contrato do Lambda Authorizer.
-- [x] Criar `AuthenticatedUser` e `AuthenticatedUserProvider`.
-- [x] Criar provider local para desenvolvimento independente.
-- [x] Criar provider para o contexto confiavel do API Gateway.
-- [ ] Remover login, emissao de JWT e bootstrap administrativo da aplicacao.
-- [ ] Remover dependencia da tabela `admin_users` do dominio da aplicacao.
-- [ ] Aplicar roles e permissions aos endpoints protegidos.
-- [ ] Criar testes de autenticacao e autorizacao com filtros ativos.
+## Concluido
 
-## P1 - Operacao e observabilidade
+- [x] Repositorio da aplicacao principal separado.
+- [x] CI com build, testes e validacao de manifests Kubernetes.
+- [x] Provider local de identidade para desenvolvimento.
+- [x] Provider de identidade baseado nos headers confiaveis do API Gateway.
+- [x] Remocao do login e da emissao/validacao propria de JWT da API principal.
+- [x] Autorizacao por roles, permissoes e propriedade contextual.
+- [x] Testes de autenticacao e autorizacao com filtros ativos.
+- [x] OpenAPI/Swagger atualizado para o fluxo com autenticacao externa.
+- [x] Dockerfile com Datadog Java Agent.
+- [x] Logs estruturados JSON.
+- [x] `correlation_id` via `X-Correlation-Id` nas rotas `/api/**`.
+- [x] Actuator health, liveness e readiness.
+- [x] Metricas de negocio de ordens de servico via Micrometer/DogStatsD.
+- [x] Deploy de producao no EKS via GitHub Actions.
+- [x] Publicacao de imagem no ECR com tag do SHA do commit.
 
-- [ ] Propagar ou gerar correlation ID.
-- [ ] Produzir logs estruturados em JSON.
-- [ ] Expor metricas de requisicao, latencia e erros.
-- [ ] Expor metricas do fluxo de ordens de servico.
-- [ ] Definir como medir tempo medio por status.
-- [ ] Implementar liveness e readiness.
-- [ ] Integrar com a ferramenta de observabilidade escolhida.
-- [ ] Ajustar forwarded headers, CORS e base path do API Gateway.
+## Governanca externa
 
-## P1 - Entrega
+- Protecao de `develop` e `main`, Required CI Checks e regras de promocao para
+  `main` sao centralizadas no repositorio `postech15soat-governance`.
 
-- [ ] Executar a imagem como usuario sem privilegios.
-- [ ] Publicar a imagem no registry definido pela infraestrutura.
-- [ ] Automatizar deploy de producao.
-- [ ] Atualizar OpenAPI para o fluxo de autenticacao externo.
-- [ ] Atualizar o README com URLs e instrucoes de deploy.
-- [ ] Criar diagrama especifico deste repositorio.
-- [ ] Registrar ADRs das decisoes permanentes.
-- [ ] Reunir evidencias para PDF e video.
+## Debitos tecnicos conhecidos
+
+- Traces de `/actuator/health/**` podem aparecer no Datadog APM e gerar ruido.
+  Nao e impeditivo para a entrega e deve ser ajustado posteriormente na
+  consolidacao da observabilidade integrada.
+
+## Pendencias de documentacao
+
+- [ ] Adicionar o diagrama arquitetural final do componente apos a consolidacao
+  da documentacao da Fase 3.
+
+## Candidatos a ADR ou evolucao futura
+
+- Avaliar centralizacao do ownership/executor das migrations no repositorio
+  `postech15soat-infra-database`.
+- Avaliar mutation testing com PIT para regras de dominio e application
+  services.

@@ -1,6 +1,6 @@
 # Contrato de autenticacao
 
-Status: contrato provisório implementado, aguardando validação com o responsável pela Lambda e pelo API Gateway.
+Status: contrato implementado para a entrega da Fase 3.
 
 ## Responsabilidades
 
@@ -24,22 +24,21 @@ Status: contrato provisório implementado, aguardando validação com o respons�
 - Nao emitir nem validar credenciais de clientes.
 - Nao registrar JWT, secrets ou CPF completo em logs.
 
-## Campos propostos
+## Campos do contexto autenticado
 
 | Campo | Obrigatorio | Descricao |
 |---|---:|---|
 | `subject` | sim | Identificador imutavel do usuario autenticado. |
 | `customerId` | sim para cliente | Identificador do cliente na aplicacao. |
-| `cpf` | a confirmar | CPF normalizado; evitar propagacao se nao for necessario. |
 | `status` | sim | Situacao do usuario ou cliente. |
 | `roles` | sim | Papeis atribuidos ao usuario. |
 | `permissions` | sim | Permissoes efetivas. |
 | `correlationId` | sim | Identificador de correlacao da requisicao. |
 
-## Headers provisórios do API Gateway
+## Headers do API Gateway
 
 Os nomes são configuráveis por variáveis de ambiente para que o contrato possa
-ser ajustado sem alterar código. Os valores padrão são:
+ser ajustado sem alterar codigo. Os valores padrao sao:
 
 | Campo | Header padrão | Formato |
 |---|---|---|
@@ -50,21 +49,10 @@ ser ajustado sem alterar código. Os valores padrão são:
 | `permissions` | `X-Authenticated-Permissions` | lista separada por vírgulas; pode ser vazia |
 | `correlationId` | `X-Correlation-Id` | texto não vazio |
 
-O CPF não é propagado neste contrato provisório. A aplicação considera uma
+O CPF nao e propagado para esta aplicacao. A aplicacao considera uma
 requisição anônima quando `X-Authenticated-Subject` não está presente. Se o
 subject estiver presente, todos os demais headers obrigatórios devem ser
 válidos; contexto parcial é rejeitado.
 
 Em produção, esses headers só são confiáveis se o tráfego direto aos pods for
 bloqueado e o API Gateway remover ou sobrescrever valores enviados pelo cliente.
-
-## Decisoes pendentes
-
-- [ ] Nomes definitivos dos claims e headers.
-- [ ] Algoritmo e estrategia de rotacao de chaves.
-- [ ] Emissor e audiencia esperados.
-- [ ] Duracao do token.
-- [ ] Semantica de `401` e `403`.
-- [ ] Roles e permissions do RBAC.
-- [ ] Tratamento de usuario inativo ou inexistente.
-- [ ] Mecanismo que impede acesso direto aos pods sem passar pelo Gateway.
