@@ -1,342 +1,354 @@
 # NumberOne Auto Service API
 
-Aplicacao principal do Tech Challenge Fase 3 para gerenciamento de uma oficina mecanica. Este repositorio foi migrado da solucao desenvolvida nas fases anteriores para operar em Kubernetes, atras de um API Gateway e integrado a um Lambda Authorizer.
+Aplicacao principal Spring Boot do projeto NumberOne para gestao de oficina mecanica no Tech Challenge Fase 3 da FIAP. Este repositorio contem a API de clientes, veiculos, servicos automotivos, estoque e ordens de servico.
 
-> A aplicacao nao emite nem valida JWT de clientes. O API Gateway e o Lambda Authorizer validam o token e encaminham um contexto de identidade confiavel.
+A aplicacao funcional esta integrada ao fluxo de producao da solucao NumberOne e opera atras de API Gateway, Lambda Authorizer, VPC Link, NLB interno, EKS e RDS PostgreSQL.
 
-## Stack
+## 📌 Visão Geral
+
+Este servico e a API principal de dominio da oficina. Ele nao realiza login por CPF, nao emite JWT e nao valida JWT de clientes. A autenticacao fica na frente de autenticacao e no API Gateway com Lambda Authorizer; esta API recebe apenas o contexto autenticado confiavel nos headers `X-Authenticated-*`.
+
+Fluxo de producao entregue:
+
+```text
+Insomnia/Cliente
+-> API Gateway HTTP API
+-> Lambda Authorizer
+-> VPC Link
+-> NLB interno
+-> EKS / numberone-app-auto-service-api
+-> RDS PostgreSQL
+```
+
+Modulos principais:
+
+- `customer`: cadastro e consulta de clientes.
+- `vehicle`: cadastro e consulta de veiculos.
+- `automotiveservice`: catalogo de servicos automotivos.
+- `inventory`: itens e movimentacoes de estoque.
+- `serviceorder`: ordens de servico, orcamentos, itens, insumos e acompanhamento.
+- `shared`: seguranca, contexto autenticado, correlacao, Swagger, logs, metricas e configuracoes comuns.
+
+## 🏗️ Arquitetura
+
+Na arquitetura integrada, este repositorio e o componente de aplicacao executado no EKS. A entrada publica ocorre pelo API Gateway; o NLB usado por este servico e interno, acessado pelo VPC Link.
+
+```text
+Cliente
+-> API Gateway
+-> Lambda Authorizer
+-> VPC Link
+-> NLB interno
+-> EKS / Auto Service API
+-> RDS PostgreSQL
+```
+
+O API Gateway e o Lambda Authorizer validam o JWT emitido pela solucao de autenticacao e encaminham para a aplicacao headers como `X-Authenticated-Subject`, `X-Authenticated-Customer-Id`, `X-Authenticated-Status`, `X-Authenticated-Roles` e `X-Authenticated-Permissions`.
+
+TODO: adicionar o diagrama arquitetural final do componente apos a consolidacao da documentacao da Fase 3.
+
+## 🧰 Tecnologias
 
 - Java 25
 - Spring Boot 4.0.5
-- Spring Web MVC
-- Spring Security
-- Spring Data JPA
+- Spring Web MVC, Security, Data JPA, Validation, Mail e Actuator
+- Springdoc OpenAPI/Swagger UI
 - Flyway
 - PostgreSQL
-- Mailpit
 - Docker e Docker Compose
-- Kubernetes e Kustomize
-- Amazon ECR e Amazon EKS
+- Kubernetes, Kustomize, EKS, ECR e NLB interno
 - GitHub Actions
-- H2 para testes
+- Micrometer, DogStatsD e Datadog Java Agent
+- JaCoCo, JUnit, Mockito, MockMvc, Testcontainers, H2 e Cucumber
 - SonarQube para analise local de qualidade e seguranca
 
-## Modulos
+## 📁 Estrutura do Projeto
 
-- `customer`: cadastro de clientes, documento, tipo de documento e validacoes.
-- `vehicle`: cadastro de veiculos, placa, marca, modelo, ano e vinculo com cliente.
-- `automotiveservice`: catalogo de servicos automotivos, valor base e tempo estimado.
-- `inventory`: cadastro de itens de estoque e movimentacoes de entrada, baixa e ajuste.
-- `serviceorder`: ordem de servico, diagnostico, orcamento, itens, insumos, status e acompanhamento.
-- `shared`: contexto autenticado, autorizacao, tratamento global de erros, Swagger, email e configuracoes comuns.
+```text
+.
+|-- .github/workflows/        # CI, deploy e validacao de promocao para main
+|-- doc/                      # documentacao detalhada
+|   |-- api/                  # orientacoes de Swagger/OpenAPI e Insomnia
+|   |-- fase-3/               # contratos, backlog tecnico e ADRs
+|   |-- security/             # analise estatica e evidencias de seguranca
+|   `-- testes/               # estrategia e comandos de teste
+|-- k8s/                      # manifests Kubernetes base e overlay production
+|-- scripts/                  # scripts auxiliares de SonarQube
+|-- src/main/java/            # codigo da aplicacao por modulo de dominio
+|-- src/main/resources/       # configuracoes e migrations Flyway
+|   `-- db/migrations/
+|-- src/test/java/            # testes unitarios, integracao e Cucumber/E2E
+|-- Dockerfile
+|-- docker-compose.yml
+|-- pom.xml
+`-- README.md
+```
 
-## Como Rodar com Um Comando
+## ✅ Pré-requisitos
 
-Pre-requisitos:
+Para desenvolvimento local:
 
-- Docker instalado
-- Docker Compose instalado
+- JDK 25
+- Docker
+- Docker Compose
+- Maven Wrapper do projeto (`./mvnw`)
 
-Na raiz do projeto:
+Para deploy em producao:
+
+- GitHub Environment `production` configurado
+- credenciais temporarias do AWS Academy
+- ECR, EKS e RDS provisionados pelos repositorios de infraestrutura
+
+## ⚙️ Configuração
+
+O profile `local` usa defaults para PostgreSQL local, Mailpit e identidade local `ADMIN` apenas para desenvolvimento.
+
+Principais configuracoes locais:
+
+```text
+DB_URL=jdbc:postgresql://localhost:5432/numberone
+DB_USERNAME=admin
+DB_PASSWORD=admin
+LOCAL_AUTHENTICATED_ROLES=ADMIN
+```
+
+Em producao, a imagem usa `application.properties` e recebe valores por variaveis de ambiente, ConfigMaps e Secrets Kubernetes. Segredos, JWTs, credenciais e tokens nao devem ser versionados.
+
+## ▶️ Execução Local
+
+Com Docker Compose:
 
 ```bash
 ./executar-projeto.sh
 ```
 
-Esse comando executa `docker compose up --build` e sobe a aplicacao, o banco PostgreSQL e o Mailpit.
-
-Se aparecer erro de permissao no Docker, execute com `sudo` ou adicione seu usuario ao grupo `docker`:
-
-```bash
-sudo usermod -aG docker $USER
-```
-
-Depois faca logout/login ou reinicie o terminal.
-
-## Como Rodar Manualmente com Docker
+Ou manualmente:
 
 ```bash
 docker compose up --build
 ```
 
-Servicos:
+Servicos locais:
 
 - API: `http://localhost:8080`
-- Swagger: `http://localhost:8080/swagger-ui.html`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 - PostgreSQL: `localhost:5432`
-- Mailpit SMTP: `localhost:1025`
 - Mailpit Web: `http://localhost:8025`
 
-Para parar:
-
-```bash
-docker compose down
-```
-
-Para parar e apagar o volume do banco:
-
-```bash
-docker compose down -v
-```
-
-Mais detalhes em `doc/execucao-local.md`.
-
-## Como Rodar Sem Docker para a Aplicacao
-
-Suba apenas infraestrutura:
+Para rodar a aplicacao fora do container, suba somente as dependencias e inicie o Spring Boot com o profile local:
 
 ```bash
 docker compose up -d postgres mailpit
-```
-
-Rode a aplicacao localmente:
-
-```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-O profile `local` carrega `src/main/resources/application-local.properties`, com defaults para banco local, Mailpit e uma identidade ADMIN exclusiva para desenvolvimento.
+Mais detalhes: [doc/execucao-local.md](doc/execucao-local.md).
 
-Sem profile ativo, a aplicacao usa `src/main/resources/application.properties`, que e a configuracao produtiva empacotada na imagem Docker. Nesse modo, valores sensiveis e dependentes do ambiente devem ser informados por variaveis de ambiente.
+## 🧪 Testes
 
-Alternativa:
+A suite atual possui testes unitarios, testes de integracao, testes de persistencia com Testcontainers PostgreSQL em alguns gateways, Cucumber/E2E para fluxo de `automotiveservice` e cobertura JaCoCo.
+
+Comandos principais:
 
 ```bash
-SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
+./mvnw clean test
+./mvnw clean verify
+./mvnw clean verify -DskipUnitTests=true -DskipMergedReport=true
+./mvnw clean verify -Pcucumber
 ```
 
-Configuracao local padrao:
+Relatorios gerados:
 
-- database: `numberone`
-- username: `admin`
-- password: `admin`
-- JDBC: `jdbc:postgresql://localhost:5432/numberone`
+- testes unitarios: `target/surefire-reports/unit`
+- testes de integracao: `target/failsafe-reports/integration`
+- cobertura unitaria: `target/site/jacoco-unit/index.html`
+- cobertura de integracao: `target/site/jacoco-integration/index.html`
+- cobertura combinada: `target/site/jacoco-merged/index.html`
+- Cucumber: `target/cucumber-reports/automotiveservice/index.html`
 
-## Autenticacao e autorizacao
+Nao ha threshold de cobertura bloqueante configurado no `pom.xml`.
 
-Em producao, o JWT e emitido pela Lambda de autenticacao e validado pelo Lambda Authorizer. O API Gateway remove ou sobrescreve headers enviados pelo cliente e encaminha para esta API apenas o contexto de identidade confiavel. A aplicacao converte esse contexto em um usuario do Spring Security e aplica roles, permissions e propriedade do recurso.
+Documentacao detalhada: [doc/testes/README.md](doc/testes/README.md).
 
-A API nao possui mais endpoint de login, senha administrativa ou validacao propria de JWT.
+## 🔐 Segurança
 
-No profile `local`, a identidade e definida pelas variaveis `LOCAL_AUTHENTICATED_SUBJECT`, `LOCAL_AUTHENTICATED_CUSTOMER_ID`, `LOCAL_AUTHENTICATED_STATUS`, `LOCAL_AUTHENTICATED_ROLES` e `LOCAL_AUTHENTICATED_PERMISSIONS`. Os defaults representam um administrador ativo e permitem usar Swagger sem login. Esse provider nao deve ser habilitado em producao.
+A autenticacao e delegada ao API Gateway e Lambda Authorizer. O backend converte os headers `X-Authenticated-*` em contexto autenticado do Spring Security e aplica regras de autorizacao por role, permissao e propriedade contextual do recurso.
 
-## Swagger
+Rotas administrativas exigem `ADMIN`. Fluxos publicos autenticados, como acompanhamento e resposta de orcamento, validam permissao e propriedade quando aplicavel.
+
+A analise estatica local de qualidade e seguranca e feita com SonarQube pelos scripts em `scripts/`.
+
+Documentacao detalhada: [doc/security/README.md](doc/security/README.md).
+
+## 🚀 CI/CD
+
+### CI
+
+O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em push e pull request para `develop` e `main`:
+
+- checkout e JDK 25;
+- `./mvnw --batch-mode clean verify`;
+- build da imagem Docker;
+- renderizacao do overlay Kubernetes de producao;
+- validacao dos manifests com Kubeconform;
+- bloqueio de segredos obsoletos de autenticacao gerenciada pela aplicacao;
+- publicacao dos relatorios de teste como artifact.
+
+O workflow [`.github/workflows/branch-flow.yml`](.github/workflows/branch-flow.yml) valida que PRs para `main` tenham origem em `develop`.
+
+### CD
+
+O workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) executa deploy quando ha push em `main` ou acionamento manual, sempre com `environment: production`:
+
+- roda testes automatizados;
+- autentica na AWS Academy;
+- busca host e credenciais do RDS via AWS;
+- builda e publica imagem no ECR com tag igual ao SHA do commit;
+- configura acesso ao EKS;
+- cria/atualiza ConfigMap e Secret de runtime;
+- aplica o overlay `k8s/overlays/production` no namespace `numberone-production`;
+- aguarda rollout, NLB interno e smoke test em `/actuator/health/readiness`.
+
+Fluxo de governanca:
+
+```text
+feature/* -> Pull Request -> develop -> Pull Request -> main -> Production
+```
+
+As protecoes de `develop` e `main`, Required CI Checks e validacao de promocao para `main` sao centralizadas no repositorio `postech15soat-governance`.
+
+Ambientes:
+
+| Ambiente | Utilização |
+|---|---|
+| Local | Desenvolvimento |
+| Production | AWS Academy |
+
+Nao existe ambiente cloud de homologacao por orientacao do professor.
+
+## ☁️ Deploy
+
+Os manifests ficam em [k8s/](k8s/README.md) e usam Kustomize com base comum e overlay de producao.
+
+Recursos confirmados:
+
+- `Deployment` `numberone-api` com 2 replicas;
+- `Service` `LoadBalancer` com NLB interno;
+- `ConfigMap` base e ConfigMap runtime criado no workflow;
+- `Secret` runtime criado no workflow;
+- `HorizontalPodAutoscaler` entre 2 e 5 replicas por CPU/memoria;
+- `PodDisruptionBudget` com `minAvailable: 1`;
+- startup, readiness e liveness probes em Actuator;
+- namespace `numberone-production`;
+- imagem publicada no ECR e implantada no EKS.
+
+A estrategia de rollout usa `maxSurge: 0` e `maxUnavailable: 1`. Esta e uma decisao pragmatica do ambiente academico por limitacao de memoria/capacidade do cluster AWS Academy; nao representa necessariamente a estrategia ideal para uma producao corporativa.
+
+## 🔌 APIs
+
+A documentacao oficial da API e o OpenAPI gerado pela propria aplicacao.
 
 Com a aplicacao rodando:
 
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+A collection do Insomnia usada na apresentacao esta versionada em [doc/api/numberone-insomnia.yaml](doc/api/numberone-insomnia.yaml). O export foi sanitizado para nao conter JWT real, secrets, credenciais ou tokens. O Swagger/OpenAPI continua sendo a documentacao oficial da API.
+
+Usuario academico de demonstracao para apresentacao:
+
 ```text
-http://localhost:8080/swagger-ui.html
+CPF: 52998224725
+Perfil: ADMIN
+Uso: dados deterministicos academicos para demonstracao, sem tratar como dado real de producao
 ```
 
-Com o profile `local`, o Swagger usa automaticamente a identidade local configurada.
+## 📊 Observabilidade
 
-## Endpoints Principais
+Esta aplicacao participa da observabilidade integrada com Datadog produzindo:
 
-Publicos:
+- APM/traces via Datadog Java Agent empacotado no Dockerfile e iniciado em `entrypoint.sh`;
+- logs estruturados JSON no formato `logstash` para stdout;
+- correlacao por `X-Correlation-Id`, armazenado no MDC como `correlation_id` nas rotas `/api/**`;
+- preservacao de campos Datadog no MDC, como `dd.trace_id` e `dd.span_id`, quando injetados pelo tracer;
+- metricas Micrometer enviadas via DogStatsD (`micrometer-registry-statsd`);
+- Actuator health, liveness e readiness;
+- metricas customizadas de negocio:
+  - `numberone.service_order.created`;
+  - `numberone.service_order.stage.duration` com tag `stage` para `diagnostico`, `execucao` e `finalizacao`.
 
-- `GET /api/public/health`
-- `GET /actuator/health`
-- `GET /actuator/health/liveness`
-- `GET /actuator/health/readiness`
+O dashboard final do Datadog e os add-ons compartilhados de observabilidade do cluster pertencem a solucao integrada, especialmente ao repositorio `postech15soat-infra-cloud`.
 
-## Correlacao de requisicoes
+Debito tecnico registrado: traces de `/actuator/health/**` podem aparecer no APM e gerar ruido; a correcao nao faz parte desta tarefa.
 
-A API exige `X-Correlation-Id` em todas as requisicoes HTTP. O consumidor deve
-enviar um valor nao vazio, por exemplo `X-Correlation-Id: teste-julio-os-001`.
-Endpoints do Actuator nao exigem esse header.
+## 🗃️ Banco de Dados
 
-O valor resolvido fica disponivel durante a requisicao em `MDC` como
-`correlation_id` e aparece nos logs estruturados. A API nao gera nem devolve esse
-header na resposta. Campos de tracing do Datadog, como `dd.trace_id` e
-`dd.span_id`, permanecem independentes.
-
-Autenticados como cliente proprietario ou administrador:
-
-- `GET /api/public/ordens-servico/{id}/acompanhamento`
-- `GET /api/public/orcamentos-ordem-servico/{id}/aprovacao/aprovar`
-- `GET /api/public/orcamentos-ordem-servico/{id}/aprovacao/rejeitar`
-
-Administrativos:
-
-- `GET /api/admin/session`
-- `POST /api/admin/clientes`
-- `GET /api/admin/clientes`
-- `POST /api/admin/veiculos`
-- `GET /api/admin/veiculos`
-- `POST /api/admin/servicos`
-- `GET /api/admin/servicos`
-- `POST /api/admin/itens`
-- `GET /api/admin/itens`
-- `POST /api/admin/estoque/entrada`
-- `POST /api/admin/estoque/baixa`
-- `POST /api/admin/estoque/ajuste`
-- `POST /api/admin/ordens-servico`
-- `GET /api/admin/ordens-servico`
-- `POST /api/admin/itens-ordem-servico`
-- `POST /api/admin/itens-ordem-servico/{serviceOrderItemId}/insumos`
-- `POST /api/admin/ordens-servico/{serviceOrderId}/orcamentos`
-- `PATCH /api/admin/orcamentos-ordem-servico/{id}/solicitar-aprovacao`
-
-## Flyway
-
-As migrations ficam em:
+A aplicacao usa PostgreSQL com Flyway. As migrations ficam em:
 
 ```text
 src/main/resources/db/migrations
 ```
 
-O Flyway roda automaticamente na subida da aplicacao e cria/atualiza as tabelas no PostgreSQL. Para a entrega atual, esta API continua responsavel por executar as migrations do banco compartilhado pela aplicacao principal e pelo Auth. Essa estrategia e pragmatica para manter um banco vazio funcional apenas com o startup da API/Flyway, sem centralizar as migrations no repositorio de database nesta etapa.
+O Flyway executa automaticamente durante o startup da aplicacao e esse comportamento foi mantido.
 
-Ordem atual:
+Migrations atuais:
 
 - `V1__create_initial_schema.sql`: schema principal da oficina.
-- `V2__create_auth_rbac.sql`: tabelas de Auth/RBAC usadas pelo login por CPF e pelo JWT.
-- `V3__seed_default_roles_permissions.sql`: perfis e permissoes padrao herdados do Auth.
+- `V2__create_auth_rbac.sql`: tabelas de Auth/RBAC usadas pelo fluxo integrado.
+- `V3__seed_default_roles_permissions.sql`: perfis e permissoes padrao.
 - `V4__align_application_authorization_contract.sql`: alinhamento do perfil `CUSTOMER` e permissoes esperadas pela API.
 - `V5__seed_academic_demo_data.sql`: massa academica minima para demonstracao integrada.
+- `V6__promote_academic_demo_user_to_admin.sql`: promove somente o usuario academico CPF `52998224725` para `ADMIN`.
 
-O ambiente academico possui dados deterministicos de demonstracao. CPF conhecido para teste no `POST /auth/login`:
+Centralizar ownership/executor das migrations no repositorio `postech15soat-infra-database` e candidato a ADR/evolucao futura, nao uma decisao aceita nesta entrega. As migrations nao foram movidas.
 
-```text
-52998224725
-```
+## 📚 Documentação
 
-Nao ha senha para esse fluxo; o login atual usa apenas CPF. O cliente demo fica ativo, possui `auth_usuario`, perfil `CUSTOMER`, permissoes de acompanhamento/aprovacao proprias, veiculo, servico, item de estoque, movimentacao, ordem de servico, orcamento e item de ordem para testes basicos do dominio da oficina.
+- [doc/README.md](doc/README.md): indice geral de documentacao.
+- [doc/execucao-local.md](doc/execucao-local.md): execucao local.
+- [doc/api/README.md](doc/api/README.md): Swagger/OpenAPI e Insomnia.
+- [doc/testes/README.md](doc/testes/README.md): testes e evidencias.
+- [doc/security/README.md](doc/security/README.md): SonarQube e seguranca.
+- [doc/fase-3/README.md](doc/fase-3/README.md): documentacao tecnica da Fase 3.
+- [doc/fase-3/authentication-contract.md](doc/fase-3/authentication-contract.md): contrato dos headers autenticados.
+- [doc/fase-3/authentication-integration-review.md](doc/fase-3/authentication-integration-review.md): revisao da integracao de autenticacao.
+- [doc/fase-3/adr/README.md](doc/fase-3/adr/README.md): ADRs.
+- [k8s/README.md](k8s/README.md): manifests e deploy Kubernetes.
+- [doc/modulos/ordem-servico.md](doc/modulos/ordem-servico.md): modulo de ordem de servico.
+- [doc/modulos/servico-automotivo.md](doc/modulos/servico-automotivo.md): modulo de servicos automotivos.
+- [doc/modulos/item-estoque.md](doc/modulos/item-estoque.md): modulo de item de estoque.
+- [doc/modulos/movimento-estoque.md](doc/modulos/movimento-estoque.md): modulo de movimento de estoque.
+- [doc/linguagem_ubiqua/linguagem-ubiqua.md](doc/linguagem_ubiqua/linguagem-ubiqua.md): linguagem ubiqua.
 
-## Deploy no Kubernetes
+## 🧠 Decisões Arquiteturais
 
-Os manifests ficam em [`k8s/`](k8s/README.md) e usam uma base comum com overlay
-de producao:
+ADRs existentes:
 
-- `develop` executa CI e validacoes, mas nao representa ambiente de runtime e
-  nao faz deploy Kubernetes;
-- `main` publica a imagem no ECR e faz o unico deploy em `numberone-production`,
-  usando o GitHub Environment `production`.
+- [ADR-0001 - Aplicacao principal em repositorio independente](doc/fase-3/adr/0001-aplicacao-em-repositorio-independente.md), status `aceito`.
 
-Cada imagem recebe como tag o SHA completo do commit. O pipeline aplica o
-Deployment, NLB interno, HPA e PodDisruptionBudget, aguarda o rollout e executa
-um smoke test em `/actuator/health/readiness`.
+Decisoes implementadas e documentadas no repositorio:
 
-O Service e do tipo `LoadBalancer`, mas usa um NLB interno nas subnets privadas.
-A entrada externa ocorre exclusivamente pelo caminho `API Gateway -> VPC Link
--> NLB`, impedindo que clientes contornem o Authorizer.
+- autenticacao delegada ao API Gateway/Lambda Authorizer;
+- provider local apenas para desenvolvimento;
+- Flyway executado no startup nesta entrega;
+- deploy unico em `Production` no AWS Academy;
+- rollout academico com `maxSurge: 0` e `maxUnavailable: 1` por limite de capacidade.
 
-O deploy requer que o RDS esteja provisionado e que o environment `production`
-possua as variaveis e secrets descritos em [`k8s/README.md`](k8s/README.md).
-O Metrics Server e o Datadog Agent compartilhado do EKS pertencem ao repositorio
-`postech15soat-infra-cloud`; este repositorio nao instala sidecar Datadog nem
-Helm chart.
+## ⚠️ Limitações e decisões do ambiente acadêmico
 
-## Testes
+- O ambiente cloud usado e o AWS Academy.
+- Nao existe ambiente cloud de homologacao por orientacao do professor.
+- O cluster possui restricoes de capacidade/memoria, refletidas em sizing e rollout.
+- `maxSurge: 0` e `maxUnavailable: 1` atendem ao contexto academico e nao devem ser lidos como recomendacao generica para producao corporativa.
+- O NLB deste servico e interno; a exposicao externa ocorre pelo API Gateway da solucao integrada.
 
-A documentacao completa do teste em [doc/testes/README.md](doc/testes/README.md).
+## 🤝 Contribuição
 
-Fluxo resumido:
-
-Use `./mvnw` como comando recomendado. `mvn` também funciona quando o Maven estiver instalado localmente.
-
-### Somente unitários
-
-```bash
-./mvnw clean test
-# ou
-mvn clean test
-```
-
-Executa `*Test.java`, não executa `*IT.java` e não executa Cucumber.
-
-### Unitários + integração
-
-```bash
-./mvnw clean verify
-# ou
-mvn clean verify
-```
-
-Executa unitários e integração. O Cucumber não roda nesse comando.
-
-### Somente integração
-
-```bash
-./mvnw clean verify -DskipUnitTests=true -DskipMergedReport=true
-# ou
-mvn clean verify -DskipUnitTests=true -DskipMergedReport=true
-```
-
-Executa somente integração e não executa unitários.
-
-### Cucumber/E2E
-
-```bash
-./mvnw clean verify -Pcucumber
-# ou
-mvn clean verify -Pcucumber
-```
-
-Executa somente Cucumber/E2E. Não executa unitários nem a suíte de integração padrão.
-
-## Analise de Seguranca com SonarQube
-
-A documentacao completa para executar a analise local de qualidade e seguranca com SonarQube esta em [doc/security/README.md](doc/security/README.md).
-
-Fluxo resumido:
-
-```bash
-./scripts/sonar-up.sh
-```
-
-Depois:
+Fluxo esperado:
 
 ```text
-Acessar http://localhost:9000
-Login inicial: admin/admin
-Criar token em My Account > Security
+feature/* -> Pull Request -> develop -> Pull Request -> main
 ```
 
-Depois:
-
-```bash
-export SONAR_TOKEN=seu_token_aqui
-./scripts/sonar-scan.sh
-```
-
-Depois:
-
-```bash
-./scripts/security-evidence.sh
-```
-
-Salve as evidencias em `doc/security/evidencias/` e preencha o relatorio final em `doc/security/relatorio-vulnerabilidades.md`.
-
-## Justificativa do banco de dados relacional e da escolha do PostgreSQL
-
-A escolha por um **banco de dados relacional** neste projeto foi feita para garantir consistencia e confiabilidade no tratamento dos dados de negocio, especialmente porque o dominio possui entidades com relacionamentos claros (como clientes, veiculos, servicos, itens, estoque e ordens de servico). Nesse contexto, o modelo relacional oferece:
-
-- **Integridade referencial nativa** por meio de chaves primarias e estrangeiras, reduzindo risco de inconsistencias entre tabelas.
-- **Transacoes ACID**, importantes para operacoes criticas (por exemplo: abertura de ordem, atualizacao de estoque e faturamento), evitando estados parciais em caso de falha.
-- **Consultas estruturadas com SQL**, facilitando filtros, agregacoes e relatorios operacionais sem perda de legibilidade.
-- **Evolucao controlada do schema**, alinhada ao uso de migrations com Flyway ja adotado no projeto.
-
-Dentro desse contexto, o **PostgreSQL** foi escolhido por combinar robustez, maturidade e excelente integracao com o ecossistema Java/Spring:
-
-- **Confiabilidade e estabilidade em producao**, sendo amplamente utilizado em sistemas corporativos.
-- **Aderencia completa ao SQL e recursos avancados** (indices, constraints, views, funcoes e tipos customizados), permitindo crescimento tecnico sem trocar de tecnologia.
-- **Otima integracao com Spring Data JPA e Flyway**, simplificando mapeamento de entidades, versionamento de banco e deploy continuo.
-- **Bom desempenho para cargas transacionais** e capacidade de escalar verticalmente e horizontalmente conforme a necessidade do projeto.
-- **Software livre e comunidade ativa**, reduzindo custo de licenciamento e facilitando suporte de longo prazo.
-
-Em resumo, a combinacao **modelo relacional + PostgreSQL** atende tanto aos requisitos atuais de consistencia e seguranca dos dados quanto a evolucao futura da aplicacao.
-
-## Documentacao do Projeto
-
-- `doc/README.md`: indice geral de documentacao.
-- `doc/equipe/modelagem-banco-aprovada.md`: decisoes de modelagem do banco.
-- `doc/equipe/documentacao_final_grupo_numbeone.pdf`: documento final do grupo.
-- `doc/linguagem_ubiqua/linguagem-ubiqua.md`: linguagem ubiqua do dominio.
-- `doc/equipe/*.md`: divisao de tarefas por integrante.
-- `doc/modulos/*.md`: documentacao dos modulos de estoque, servicos e ordem de servico.
-- `doc/execucao-local.md`: passo a passo de execucao automatica e manual.
-- `doc/padroes-java-25.md`: padroes de codigo Java definidos pelo grupo.
-- `doc/security/README.md`: execucao do SonarQube e evidencias de seguranca.
-- `doc/testes/README.md`: estrategia e evidencias de testes.
-- `doc/fase-3/README.md`: plano tecnico, contratos e backlog da Fase 3.
+Nao fazer push direto para `develop` ou `main`. As regras de protecao de branch e checks obrigatorios sao centralizadas no repositorio `postech15soat-governance`.
