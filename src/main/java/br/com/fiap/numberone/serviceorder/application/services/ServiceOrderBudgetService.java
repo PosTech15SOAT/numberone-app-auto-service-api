@@ -8,6 +8,7 @@ import br.com.fiap.numberone.serviceorder.domain.entities.ServiceOrderBudget;
 import br.com.fiap.numberone.serviceorder.domain.enums.ServiceOrderStatus;
 import br.com.fiap.numberone.serviceorder.domain.exceptions.CustomerEmailException;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.LoggerGateway;
 import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
 
 import java.math.BigDecimal;
@@ -25,18 +26,21 @@ public class ServiceOrderBudgetService {
     private final ServiceOrderBudgetGateway serviceOrderBudgetGateway;
     private final ServiceOrderBudgetApprovalNotificationGateway serviceOrderBudgetApprovalNotificationGateway;
     private final MetricsGateway metricsGateway;
+    private final LoggerGateway logger;
 
     public ServiceOrderBudgetService(
             ServiceOrderGateway serviceOrderGateway,
             ServiceOrderBudgetGateway serviceOrderBudgetGateway,
             ServiceOrderBudgetApprovalNotificationGateway serviceOrderBudgetApprovalNotificationGateway,
-            MetricsGateway metricsGateway
+            MetricsGateway metricsGateway,
+            LoggerGateway logger
     ) {
         this.serviceOrderGateway = serviceOrderGateway;
         this.serviceOrderBudgetGateway = serviceOrderBudgetGateway;
         this.serviceOrderBudgetApprovalNotificationGateway =
                 serviceOrderBudgetApprovalNotificationGateway;
         this.metricsGateway = metricsGateway;
+        this.logger = logger;
     }
 
     public ServiceOrderBudget createDraftBudget(
@@ -54,9 +58,18 @@ public class ServiceOrderBudgetService {
                 )
         );
 
-        return serviceOrderBudgetGateway.save(
+        ServiceOrderBudget createdBudget = serviceOrderBudgetGateway.save(
                 serviceOrderBudget
         );
+
+        logger.infoWithContext(
+                "Orçamento criado",
+                "service_order_id", createdBudget.getServiceOrder().getId(),
+                "budget_id", createdBudget.getId(),
+                "status", createdBudget.getStatus()
+        );
+
+        return createdBudget;
     }
 
     public ServiceOrderBudget requestApproval(UUID id) {
@@ -65,6 +78,7 @@ public class ServiceOrderBudgetService {
 
         ServiceOrder serviceOrder =
                 getServiceOrder(serviceOrderBudget);
+        ServiceOrderStatus previousStatus = serviceOrder.getStatus();
 
         serviceOrderBudget.attachServiceOrder(
                 serviceOrder
@@ -125,6 +139,14 @@ public class ServiceOrderBudgetService {
                         recipientEmail
                 );
 
+        logger.infoWithContext(
+                "Orçamento enviado para aprovação",
+                "service_order_id", serviceOrder.getId(),
+                "budget_id", savedBudget.getId(),
+                "previous_status", previousStatus,
+                "new_status", serviceOrder.getStatus()
+        );
+
         return savedBudget;
     }
 
@@ -139,9 +161,17 @@ public class ServiceOrderBudgetService {
                         serviceOrderBudget
                 );
 
-        updateServiceOrderStatus(
+        ServiceOrder serviceOrder = updateServiceOrderStatus(
                 serviceOrderBudget,
                 ServiceOrderStatus.APPROVED
+        );
+
+        logger.infoWithContext(
+                "Orçamento aprovado",
+                "service_order_id", serviceOrder.getId(),
+                "budget_id", savedBudget.getId(),
+                "previous_status", ServiceOrderStatus.WAITING_APPROVAL,
+                "new_status", serviceOrder.getStatus()
         );
 
         return savedBudget;
@@ -178,7 +208,7 @@ public class ServiceOrderBudgetService {
                 : serviceOrder.getCustomer().getId();
     }
 
-    private void updateServiceOrderStatus(
+    private ServiceOrder updateServiceOrderStatus(
             ServiceOrderBudget serviceOrderBudget,
             ServiceOrderStatus status
     ) {
@@ -191,6 +221,8 @@ public class ServiceOrderBudgetService {
                 serviceOrder.getId(),
                 serviceOrder.getStatus()
         );
+
+        return serviceOrder;
     }
 
     private ServiceOrderBudget getServiceOrderBudget(

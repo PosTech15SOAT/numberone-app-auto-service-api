@@ -33,6 +33,7 @@ import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositorie
 import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositories.ServiceOrderItemSupplyRepository;
 import br.com.fiap.numberone.serviceorder.infrastructure.persistence.repositories.ServiceOrderRepository;
 import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
+import br.com.fiap.numberone.shared.application.gateways.LoggerGateway;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -75,13 +76,15 @@ public class ServiceOrderBeansConfig {
             ServiceOrderGateway serviceOrderGateway,
             CustomerGateway customerGateway,
             VehicleGateway vehicleGateway,
-            MetricsGateway metricsGateway
+            MetricsGateway metricsGateway,
+            LoggerGateway loggerGateway
     ) {
         return new ServiceOrderService(
                 serviceOrderGateway,
                 customerGateway,
                 vehicleGateway,
-                metricsGateway
+                metricsGateway,
+                loggerGateway
         );
     }
 
@@ -95,13 +98,15 @@ public class ServiceOrderBeansConfig {
             ServiceOrderGateway serviceOrderGateway,
             ServiceOrderItemGateway serviceOrderItemGateway,
             AutomotiveServiceGateway automotiveServiceGateway,
-            InventoryWithdrawalGateway inventoryWithdrawalGateway
+            InventoryWithdrawalGateway inventoryWithdrawalGateway,
+            LoggerGateway loggerGateway
     ) {
         return new ServiceOrderItemService(
                 serviceOrderGateway,
                 serviceOrderItemGateway,
                 automotiveServiceGateway,
-                inventoryWithdrawalGateway
+                inventoryWithdrawalGateway,
+                loggerGateway
         );
     }
 
@@ -110,13 +115,15 @@ public class ServiceOrderBeansConfig {
             ServiceOrderGateway serviceOrderGateway,
             ServiceOrderBudgetGateway serviceOrderBudgetGateway,
             ServiceOrderBudgetApprovalNotificationGateway serviceOrderBudgetApprovalNotificationGateway,
-            MetricsGateway metricsGateway
+            MetricsGateway metricsGateway,
+            LoggerGateway loggerGateway
     ) {
         return new ServiceOrderBudgetService(
                 serviceOrderGateway,
                 serviceOrderBudgetGateway,
                 serviceOrderBudgetApprovalNotificationGateway,
-                metricsGateway
+                metricsGateway,
+                loggerGateway
         );
     }
 
