@@ -18,6 +18,7 @@ import br.com.fiap.numberone.serviceorder.domain.exceptions.ServiceOrderItemAlre
 import br.com.fiap.numberone.serviceorder.domain.references.AutomotiveService;
 import br.com.fiap.numberone.serviceorder.domain.references.InventoryItem;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.LoggerGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +59,9 @@ class ServiceOrderItemServiceTest {
     @Mock
     private InventoryWithdrawalGateway inventoryWithdrawalGateway;
 
+    @Mock
+    private LoggerGateway logger;
+
     private ServiceOrderItemService service;
 
     @BeforeEach
@@ -66,7 +70,8 @@ class ServiceOrderItemServiceTest {
                 serviceOrderGateway,
                 serviceOrderItemGateway,
                 automotiveServiceGateway,
-                inventoryWithdrawalGateway
+                inventoryWithdrawalGateway,
+                logger
         );
     }
 

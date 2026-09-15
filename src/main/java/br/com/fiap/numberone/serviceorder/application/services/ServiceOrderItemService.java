@@ -14,6 +14,7 @@ import br.com.fiap.numberone.serviceorder.domain.exceptions.InvalidServiceOrderS
 import br.com.fiap.numberone.serviceorder.domain.exceptions.ServiceOrderItemAlreadyInStatusException;
 import br.com.fiap.numberone.serviceorder.domain.references.AutomotiveService;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.LoggerGateway;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -25,17 +26,20 @@ public class ServiceOrderItemService {
     private final ServiceOrderItemGateway serviceOrderItemGateway;
     private final AutomotiveServiceGateway automotiveServiceGateway;
     private final InventoryWithdrawalGateway inventoryWithdrawalGateway;
+    private final LoggerGateway logger;
 
     public ServiceOrderItemService(
             ServiceOrderGateway serviceOrderGateway,
             ServiceOrderItemGateway serviceOrderItemGateway,
             AutomotiveServiceGateway automotiveServiceGateway,
-            InventoryWithdrawalGateway inventoryWithdrawalGateway
+            InventoryWithdrawalGateway inventoryWithdrawalGateway,
+            LoggerGateway logger
     ) {
         this.serviceOrderGateway = serviceOrderGateway;
         this.serviceOrderItemGateway = serviceOrderItemGateway;
         this.automotiveServiceGateway = automotiveServiceGateway;
         this.inventoryWithdrawalGateway = inventoryWithdrawalGateway;
+        this.logger = logger;
     }
 
     public ServiceOrderItem createServiceOrderItem(ServiceOrderItem serviceOrderItem) {
@@ -49,7 +53,16 @@ public class ServiceOrderItemService {
         serviceOrderItem.attachServiceOrder(serviceOrder);
         serviceOrderItem.attachAutomotiveService(automotiveService);
 
-        return serviceOrderItemGateway.save(serviceOrderItem);
+        ServiceOrderItem createdServiceOrderItem = serviceOrderItemGateway.save(serviceOrderItem);
+
+        logger.infoWithContext(
+                "Item adicionado à ordem de serviço",
+                "service_order_id", createdServiceOrderItem.getServiceOrder().getId(),
+                "service_order_item_id", createdServiceOrderItem.getId(),
+                "status", createdServiceOrderItem.getStatus()
+        );
+
+        return createdServiceOrderItem;
     }
 
     public void deleteServiceOrderItem(UUID id) {
@@ -90,13 +103,22 @@ public class ServiceOrderItemService {
 
         serviceOrderItem.updateStatus(OrderItemStatus.COMPLETED);
         serviceOrderItem.defineEndDateTime(LocalDateTime.now());
-        return serviceOrderItemGateway.complete(
+        ServiceOrderItem completedServiceOrderItem = serviceOrderItemGateway.complete(
                 ServiceOrderItemCompletionUpdate.builder()
                         .serviceOrderItemId(serviceOrderItem.getId())
                         .endDateTime(serviceOrderItem.getEndDateTime())
                         .status(serviceOrderItem.getStatus())
                         .build()
         );
+
+        logger.infoWithContext(
+                "Item da ordem concluído",
+                "service_order_id", completedServiceOrderItem.getServiceOrder().getId(),
+                "service_order_item_id", completedServiceOrderItem.getId(),
+                "status", completedServiceOrderItem.getStatus()
+        );
+
+        return completedServiceOrderItem;
     }
 
     public ServiceOrderItem changeServiceOrderItemStatus(ServiceOrderItem serviceOrderItem, OrderItemStatus targetStatus) {
@@ -157,6 +179,14 @@ public class ServiceOrderItemService {
                         .build()
         );
         consumeSupplies(startedServiceOrderItem);
+
+        logger.infoWithContext(
+                "Item da ordem iniciado",
+                "service_order_id", startedServiceOrderItem.getServiceOrder().getId(),
+                "service_order_item_id", startedServiceOrderItem.getId(),
+                "status", startedServiceOrderItem.getStatus()
+        );
+
         return startedServiceOrderItem;
     }
 

@@ -17,6 +17,7 @@ import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderAverag
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderEstimatedTime;
 import br.com.fiap.numberone.serviceorder.domain.valueobjects.ServiceOrderValue;
 import br.com.fiap.numberone.shared.api.exception.ResourceNotFoundException;
+import br.com.fiap.numberone.shared.application.gateways.LoggerGateway;
 import br.com.fiap.numberone.shared.application.gateways.MetricsGateway;
 
 import java.math.BigDecimal;
@@ -38,17 +39,20 @@ public class ServiceOrderService {
     private final CustomerGateway customerGateway;
     private final VehicleGateway vehicleGateway;
     private final MetricsGateway metricsGateway;
+    private final LoggerGateway logger;
 
     public ServiceOrderService(
             ServiceOrderGateway serviceOrderGateway,
             CustomerGateway customerGateway,
             VehicleGateway vehicleGateway,
-            MetricsGateway metricsGateway
+            MetricsGateway metricsGateway,
+            LoggerGateway logger
     ) {
         this.serviceOrderGateway = serviceOrderGateway;
         this.customerGateway = customerGateway;
         this.vehicleGateway = vehicleGateway;
         this.metricsGateway = metricsGateway;
+        this.logger = logger;
     }
 
     public List<ServiceOrder> getServiceOrders() {
@@ -71,11 +75,20 @@ public class ServiceOrderService {
                 SERVICE_ORDER_CREATED
         );
 
+        logger.infoWithContext(
+                "Ordem de serviço criada",
+                "service_order_id", createdServiceOrder.getId(),
+                "customer_id", createdServiceOrder.getCustomer().getId(),
+                "vehicle_id", createdServiceOrder.getVehicle().getId(),
+                "status", createdServiceOrder.getStatus()
+        );
+
         return createdServiceOrder;
     }
 
     public ServiceOrder addFinalDiagnosis(UUID id, Diagnosis diagnosis) {
         ServiceOrder serviceOrder = getServiceOrder(id);
+        ServiceOrderStatus previousStatus = serviceOrder.getStatus();
 
         serviceOrder.applyFinalDiagnosis(
                 diagnosis.getFinalDiagnosisDescription(),
@@ -90,7 +103,7 @@ public class ServiceOrderService {
                 ServiceOrderStatus.IN_DIAGNOSIS
         );
 
-        return serviceOrderGateway.updateFinalDiagnosis(
+        ServiceOrder updatedServiceOrder = serviceOrderGateway.updateFinalDiagnosis(
                 ServiceOrderFinalDiagnosisUpdate.builder()
                         .serviceOrderId(serviceOrder.getId())
                         .finalDiagnosisDescription(serviceOrder.getFinalDiagnosisDescription())
@@ -99,15 +112,34 @@ public class ServiceOrderService {
                         .status(serviceOrder.getStatus())
                         .build()
         );
+
+        logger.infoWithContext(
+                "Diagnóstico iniciado",
+                "service_order_id", updatedServiceOrder.getId(),
+                "previous_status", previousStatus,
+                "new_status", updatedServiceOrder.getStatus()
+        );
+
+        return updatedServiceOrder;
     }
 
     public ServiceOrder startOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
+        ServiceOrderStatus previousStatus = serviceOrder.getStatus();
 
-        return changeOrderStatus(
+        ServiceOrder updatedServiceOrder = changeOrderStatus(
                 serviceOrder,
                 ServiceOrderStatus.IN_PROGRESS
         );
+
+        logger.infoWithContext(
+                "Execução da ordem de serviço iniciada",
+                "service_order_id", updatedServiceOrder.getId(),
+                "previous_status", previousStatus,
+                "new_status", updatedServiceOrder.getStatus()
+        );
+
+        return updatedServiceOrder;
     }
 
     public ServiceOrder cancelOrderService(UUID id) {
@@ -121,6 +153,7 @@ public class ServiceOrderService {
 
     public ServiceOrder completeOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
+        ServiceOrderStatus previousStatus = serviceOrder.getStatus();
 
         serviceOrder.validateServiceItemsAreFinished();
 
@@ -141,11 +174,19 @@ public class ServiceOrderService {
                 executionDuration
         );
 
+        logger.infoWithContext(
+                "Ordem de serviço concluída",
+                "service_order_id", updatedServiceOrder.getId(),
+                "previous_status", previousStatus,
+                "new_status", updatedServiceOrder.getStatus()
+        );
+
         return updatedServiceOrder;
     }
 
     public ServiceOrder deliverOrderService(UUID id) {
         ServiceOrder serviceOrder = getServiceOrder(id);
+        ServiceOrderStatus previousStatus = serviceOrder.getStatus();
 
         if (serviceOrder.getStatus() == ServiceOrderStatus.COMPLETED) {
             serviceOrder.validateServiceItemsAreFinished();
@@ -173,6 +214,13 @@ public class ServiceOrderService {
         recordStageDuration(
                 STAGE_FINALIZATION,
                 finalizationDuration
+        );
+
+        logger.infoWithContext(
+                "Ordem de serviço entregue",
+                "service_order_id", deliveredServiceOrder.getId(),
+                "previous_status", previousStatus,
+                "new_status", deliveredServiceOrder.getStatus()
         );
 
         return deliveredServiceOrder;
