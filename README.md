@@ -313,6 +313,8 @@ Centralizar ownership/executor das migrations no repositorio `postech15soat-infr
 - [doc/fase-3/README.md](doc/fase-3/README.md): documentacao tecnica da Fase 3.
 - [doc/fase-3/authentication-contract.md](doc/fase-3/authentication-contract.md): contrato dos headers autenticados.
 - [doc/fase-3/authentication-integration-review.md](doc/fase-3/authentication-integration-review.md): revisao da integracao de autenticacao.
+- [doc/fase-3/diagrams/components-auto-service-api.md](doc/fase-3/diagrams/components-auto-service-api.md): diagrama de componentes da Auto Service API.
+- [doc/fase-3/diagrams/sequence-service-order-creation.md](doc/fase-3/diagrams/sequence-service-order-creation.md): sequência de abertura de Ordem de Serviço.
 - [doc/fase-3/adr/README.md](doc/fase-3/adr/README.md): ADRs.
 - [k8s/README.md](k8s/README.md): manifests e deploy Kubernetes.
 - [doc/modulos/ordem-servico.md](doc/modulos/ordem-servico.md): modulo de ordem de servico.
@@ -326,6 +328,7 @@ Centralizar ownership/executor das migrations no repositorio `postech15soat-infr
 ADRs existentes:
 
 - [ADR-0001 - Aplicacao principal em repositorio independente](doc/fase-3/adr/0001-aplicacao-em-repositorio-independente.md), status `aceito`.
+- [ADR-0002 - Contexto autenticado da aplicacao](doc/fase-3/adr/0002-contexto-autenticado-da-aplicacao.md), status `aceito`.
 
 Decisoes implementadas e documentadas no repositorio:
 
