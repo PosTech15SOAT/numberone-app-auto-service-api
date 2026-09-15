@@ -17,7 +17,9 @@ itens pendentes sao debitos ou consolidacoes documentais.
 - [x] Dockerfile com Datadog Java Agent.
 - [x] Logs estruturados JSON.
 - [x] `correlation_id` via `X-Correlation-Id` nas rotas `/api/**`.
+- [x] `service_order_id` estruturado nos principais eventos do ciclo da ordem.
 - [x] Actuator health, liveness e readiness.
+- [x] Exclusao dos novos traces de health da API nas trace metrics do Datadog.
 - [x] Metricas de negocio de ordens de servico via Micrometer/DogStatsD.
 - [x] Deploy de producao no EKS via GitHub Actions.
 - [x] Publicacao de imagem no ECR com tag do SHA do commit.
@@ -26,12 +28,6 @@ itens pendentes sao debitos ou consolidacoes documentais.
 
 - Protecao de `develop` e `main`, Required CI Checks e regras de promocao para
   `main` sao centralizadas no repositorio `postech15soat-governance`.
-
-## Debitos tecnicos conhecidos
-
-- Traces de `/actuator/health/**` podem aparecer no Datadog APM e gerar ruido.
-  Nao e impeditivo para a entrega e deve ser ajustado posteriormente na
-  consolidacao da observabilidade integrada.
 
 ## Pendencias de documentacao
 

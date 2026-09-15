@@ -271,6 +271,7 @@ Esta aplicacao participa da observabilidade integrada com Datadog produzindo:
 - APM/traces via Datadog Java Agent empacotado no Dockerfile e iniciado em `entrypoint.sh`;
 - logs estruturados JSON no formato `logstash` para stdout;
 - correlacao por `X-Correlation-Id`, armazenado no MDC como `correlation_id` nas rotas `/api/**`;
+- rastreabilidade do ciclo de vida da ordem por `service_order_id` em diferentes requisicoes;
 - preservacao de campos Datadog no MDC, como `dd.trace_id` e `dd.span_id`, quando injetados pelo tracer;
 - metricas Micrometer enviadas via DogStatsD (`micrometer-registry-statsd`);
 - Actuator health, liveness e readiness;
@@ -280,7 +281,14 @@ Esta aplicacao participa da observabilidade integrada com Datadog produzindo:
 
 O dashboard final do Datadog e os add-ons compartilhados de observabilidade do cluster pertencem a solucao integrada, especialmente ao repositorio `postech15soat-infra-cloud`.
 
-Debito tecnico registrado: traces de `/actuator/health/**` podem aparecer no APM e gerar ruido; a correcao nao faz parte desta tarefa.
+`correlation_id` identifica uma unica requisicao HTTP. `service_order_id`
+identifica a mesma ordem durante criacao, diagnostico, orcamento, execucao,
+conclusao e entrega, mesmo quando cada etapa usa um `correlation_id` diferente.
+
+O Java tracer descarta apenas os novos traces do servico
+`numberone-auto-service` cujo resource seja `GET /actuator/health` ou um caminho
+filho. Os probes continuam ativos; chamadas de negocio e correlacao entre logs e
+APM permanecem habilitadas.
 
 ## 🗃️ Banco de Dados
 

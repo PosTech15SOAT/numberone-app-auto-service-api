@@ -29,6 +29,7 @@
 
 	<properties>
 		<cucumber.version>7.20.1</cucumber.version>
+		<dd-trace.version>1.64.2</dd-trace.version>
 		<java.version>25</java.version>
 		<jacoco.version>0.8.14</jacoco.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
@@ -71,6 +72,11 @@
 		<dependency>
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-statsd</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.datadoghq</groupId>
+			<artifactId>dd-trace-api</artifactId>
+			<version>${dd-trace.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>

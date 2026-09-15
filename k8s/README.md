@@ -62,9 +62,9 @@ node e `DD_DOGSTATSD_PORT=8125` permite que as metricas Micrometer StatsD sejam
 emitidas via DogStatsD. Os logs JSON continuam indo para stdout e sao coletados
 pelo Agent do cluster.
 
-Debito tecnico: traces de `/actuator/health/**` podem aparecer no Datadog APM e
-gerar ruido. Esse ajuste deve ser tratado posteriormente na consolidacao da
-observabilidade integrada.
+O Java tracer da aplicacao filtra apenas os traces do servico
+`numberone-auto-service` cujo resource seja `GET /actuator/health` ou um caminho
+filho. Essa filtragem nao remove nem altera os probes Kubernetes descritos acima.
 
 ## Validacao local
 
