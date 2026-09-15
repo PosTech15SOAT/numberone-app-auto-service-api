@@ -5,6 +5,7 @@ ADRs registram decisoes arquiteturais permanentes deste repositorio.
 ## Indice
 
 - [ADR-0001 - Aplicacao principal em repositorio independente](0001-aplicacao-em-repositorio-independente.md)
+- [ADR-0002 - Contexto autenticado da aplicacao](0002-contexto-autenticado-da-aplicacao.md)
 
 ## Convencao
 
